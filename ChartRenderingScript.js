@@ -4,8 +4,18 @@ let filmChartInstance = null;
 // Function to fetch data and render the chart
 async function renderChart() {
     const errorMessageDiv = document.getElementById('errorMessage');
+    
+    // --- Centralized Visual Configuration ---
     const lightTextColor = '#d1d5db'; // Tailwind gray-300 for text in dark mode
     const gridColor = 'rgba(209, 213, 219, 0.2)'; // Lighter grid lines for dark mode
+
+    // Dataset visual properties (applied to all datasets if multiple)
+    const barBackgroundColor = 'rgba(59, 130, 246, 0.7)'; // Example: Tailwind blue-500
+    const barBorderColor = 'rgba(59, 130, 246, 1)';
+    const barBorderWidth = 1;
+    const barBorderRadius = 2;
+    const barHoverBackgroundColor = 'rgba(59, 130, 246, 0.9)'; // Darker/more opaque version for hover
+    // --- End of Centralized Visual Configuration ---
 
     try {
         // Fetch data from the Go API endpoint
@@ -35,18 +45,21 @@ async function renderChart() {
             data: {
                 labels: chartData.labels,
                 datasets: chartData.datasets.map(dataset => ({
-                    label: dataset.label || 'Movies Watched',
-                    data: dataset.data,
-                    backgroundColor: dataset.backgroundColor && dataset.backgroundColor.length > 0 ? dataset.backgroundColor[0] : 'rgba(59, 130, 246, 0.7)',
-                    borderColor: dataset.borderColor && dataset.borderColor.length > 0 ? dataset.borderColor[0] : 'rgba(59, 130, 246, 1)',
-                    borderWidth: dataset.borderWidth || 1,
-                    borderRadius: 2,
-                    hoverBackgroundColor: dataset.backgroundColor && dataset.backgroundColor.length > 0 ? dataset.backgroundColor[0].replace('0.7', '0.9') : 'rgba(59, 130, 246, 0.9)',
+                    // Label and data still come from the API
+                    label: dataset.label || 'Movies Watched', 
+                    data: dataset.data, 
+
+                    // Visual properties are now sourced from constants defined above in this script
+                    backgroundColor: barBackgroundColor,
+                    borderColor: barBorderColor,
+                    borderWidth: barBorderWidth,
+                    borderRadius: barBorderRadius,
+                    hoverBackgroundColor: barHoverBackgroundColor,
                 }))
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
                 animation: {
                     duration: 1000, 
                     easing: 'easeInOutQuart',
@@ -61,13 +74,13 @@ async function renderChart() {
                                 size: 14,
                                 weight: 'bold'
                             },
-                            color: lightTextColor
+                            color: lightTextColor // JS-controlled
                         },
                         ticks: {
-                            color: lightTextColor
+                            color: lightTextColor // JS-controlled
                         },
                         grid: {
-                            color: gridColor
+                            color: gridColor // JS-controlled
                         }
                     },
                     x: {
@@ -78,13 +91,13 @@ async function renderChart() {
                                 size: 14,
                                 weight: 'bold'
                             },
-                            color: lightTextColor
+                            color: lightTextColor // JS-controlled
                         },
                         ticks: {
-                            color: lightTextColor
+                            color: lightTextColor // JS-controlled
                         },
                         grid: {
-                            color: gridColor
+                            color: gridColor // JS-controlled
                         }
                     }
                 },
@@ -93,14 +106,14 @@ async function renderChart() {
                         display: true,
                         position: 'top',
                         labels: {
-                            color: lightTextColor
+                            color: lightTextColor // JS-controlled
                         }
                     },
                     tooltip: {
                         enabled: true,
                         mode: 'index',
                         intersect: false,
-                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        backgroundColor: 'rgba(0,0,0,0.8)', // JS-controlled
                         titleFont: {
                             size: 14,
                             weight: 'bold',
@@ -108,9 +121,9 @@ async function renderChart() {
                         bodyFont: {
                             size: 12,
                         },
-                        titleColor: '#ffffff',
-                        bodyColor: '#ffffff',
-                        displayColors: false,
+                        titleColor: '#ffffff', // JS-controlled
+                        bodyColor: '#ffffff', // JS-controlled
+                        displayColors: false, // Hides the color box in tooltip, usually good if all bars are same color
                     }
                 }
             }

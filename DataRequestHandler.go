@@ -137,9 +137,9 @@ func filmCountByReleaseYearHandler(w http.ResponseWriter, r *http.Request) {
 				Label: "Movies Watched", // Updated label
 				Data:  counts,
 				// Optional: Add some default styling for the chart
-				BackgroundColor: []string{"rgba(54, 162, 235, 0.2)"}, // Example blue
-				BorderColor:     []string{"rgba(54, 162, 235, 1)"},
-				BorderWidth:     1,
+				// BackgroundColor: []string{"rgba(54, 162, 235, 0.2)"}, // Example blue
+				// BorderColor:     []string{"rgba(54, 162, 235, 1)"},
+				BorderWidth: 1,
 			},
 		},
 	}
