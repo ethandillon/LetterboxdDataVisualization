@@ -1,0 +1,49 @@
+/* Custom styles for better presentation - Dark Mode */
+body {
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* justify-content: center; Removed to allow chart to take up more space if needed */
+    min-height: 100vh;
+    background-color: #111827 !important;/* Dark gray background (Tailwind gray-900) */
+    color: #f3f4f6; /* Light gray text for general text (Tailwind gray-100) */
+    margin: 0;
+    padding: 20px; /* Added padding to body */
+    box-sizing: border-box;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 700px; /* Slightly increased max-width from 600px */
+    height: 75vh; /* Graph height to be 75% of viewport height */
+    background-color: #1f2937; /* Darker container background (Tailwind gray-800) */
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4); /* Adjusted shadow for dark mode */
+    margin-top: 10px; /* Reduced margin-top */
+    margin-bottom: 20px; /* Added margin-bottom */
+}
+
+canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important; /* Ensure canvas takes full height of container */
+}
+
+h1 {
+    width: 100%; /* Ensure h1 takes full width for centering text */
+    /* text-gray-300 class is applied in HTML for dark mode */
+}
+
+
+.error-message {
+    color: #fca5a5; /* Lighter red for dark mode (Tailwind red-400) */
+    background-color: #372525; /* Darker red background */
+    border: 1px solid #ef4444; /* Tailwind red-500 */
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    text-align: center;
+}
