@@ -111,6 +111,38 @@ func main() {
 		// log.Printf("Served %s to %s", jsFilePath, r.RemoteAddr) // Optional: log successful serving
 	})
 
+	// Handler for /ChartConfig.js to serve the CSS file
+	mux.HandleFunc("/ChartConfig.js", func(w http.ResponseWriter, r *http.Request) {
+		// Basic request logging
+		log.Printf("Received request for js: %s from %s", r.URL.Path, r.RemoteAddr)
+
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		jsFileName := "ChartConfig.js"
+		// Assume ChartConfig.js is in the current directory
+		jsFilePath, err := filepath.Abs("./" + jsFileName)
+		if err != nil {
+			// Log error if path resolution fails
+			log.Printf("Error resolving path for %s: %v", jsFileName, err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		// Check if file exists
+		if _, err := os.Stat(jsFilePath); os.IsNotExist(err) {
+			log.Printf("js file not found: %s", jsFilePath)
+			http.NotFound(w, r)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/js; charset=utf-8")
+		http.ServeFile(w, r, jsFilePath)
+		// log.Printf("Served %s to %s", jsFilePath, r.RemoteAddr) // Optional: log successful serving
+	})
+
 	log.Printf("Server starting on port %s...", port)
 	log.Printf("Access the page at http://localhost:%s/", port)
 

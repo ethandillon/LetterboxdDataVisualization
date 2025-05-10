@@ -4,24 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movies Watched by Release Year</title>
-
     <link rel="stylesheet" href="style.css">
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
-</head>
-<body> <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-300 py-4">Movies Watched by Release Year</h1>
+    <!-- 1. Load Chart.js Library FIRST -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <!-- Using UMD build, which makes 'Chart' globally available -->
 
+    <!-- 2. Load your Central Chart Configuration Script -->
+    <!-- This script will now also call applyChartDefaults() itself -->
+    <script src="ChartConfig.js"></script>
+
+    <!-- REMOVED SCRIPT BLOCK THAT CALLED applyChartDefaults on DOMContentLoaded -->
+
+</head>
+<body>
+    <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-300 py-4">Movies Watched by Release Year</h1>
     <div class="chart-container">
         <canvas id="filmCountChart"></canvas>
     </div>
-
     <div id="errorMessage" class="error-message hidden"></div>
 
+    <!-- 3. Load your specific chart rendering script LAST -->
+    <!-- 'defer' ensures DOM is ready and it runs after ChartConfig.js -->
     <script src="ChartRenderingScript.js" defer></script>
-
 </body>
 </html>
