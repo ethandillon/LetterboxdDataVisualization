@@ -20,11 +20,8 @@ type ChartData struct {
 }
 
 type Dataset struct {
-	Label           string   `json:"label"` // e.g., "Movies Watched"
-	Data            []int    `json:"data"`  // Counts
-	BackgroundColor []string `json:"backgroundColor,omitempty"`
-	BorderColor     []string `json:"borderColor,omitempty"`
-	BorderWidth     int      `json:"borderWidth,omitempty"`
+	Label string `json:"label"` // e.g., "Movies Watched"
+	Data  []int  `json:"data"`  // Counts
 }
 
 // Global variable for the database connection
@@ -139,7 +136,7 @@ func filmCountByReleaseYearHandler(w http.ResponseWriter, r *http.Request) {
 				// Optional: Add some default styling for the chart
 				// BackgroundColor: []string{"rgba(54, 162, 235, 0.2)"}, // Example blue
 				// BorderColor:     []string{"rgba(54, 162, 235, 1)"},
-				BorderWidth: 1,
+				// BorderWidth: 1,
 			},
 		},
 	}

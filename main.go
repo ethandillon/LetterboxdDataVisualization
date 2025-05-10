@@ -28,7 +28,7 @@ func main() {
 
 		htmlFileName := "index.html"
 		// Assume index.html is in the current directory
-		htmlFilePath, err := filepath.Abs("./" + htmlFileName)
+		htmlFilePath, err := filepath.Abs("./static/" + htmlFileName)
 		if err != nil {
 			// Log error if path resolution fails
 			log.Printf("Error resolving path for %s: %v", htmlFileName, err)
@@ -59,7 +59,7 @@ func main() {
 
 		cssFileName := "style.css"
 		// Assume style.css is in the current directory
-		cssFilePath, err := filepath.Abs("./" + cssFileName)
+		cssFilePath, err := filepath.Abs("./static/css/" + cssFileName)
 		if err != nil {
 			// Log error if path resolution fails
 			log.Printf("Error resolving path for %s: %v", cssFileName, err)
@@ -79,8 +79,8 @@ func main() {
 		// log.Printf("Served %s to %s", cssFilePath, r.RemoteAddr) // Optional: log successful serving
 	})
 
-	// Handler for /ChartRenderingScript.js to serve the CSS file
-	mux.HandleFunc("/ChartRenderingScript.js", func(w http.ResponseWriter, r *http.Request) {
+	// Handler for /MoviesByReleaseYearChart.js to serve the CSS file
+	mux.HandleFunc("/MoviesByReleaseYearChart.js", func(w http.ResponseWriter, r *http.Request) {
 		// Basic request logging
 		log.Printf("Received request for js: %s from %s", r.URL.Path, r.RemoteAddr)
 
@@ -89,9 +89,9 @@ func main() {
 			return
 		}
 
-		jsFileName := "ChartRenderingScript.js"
-		// Assume ChartRenderingScript.js is in the current directory
-		jsFilePath, err := filepath.Abs("./" + jsFileName)
+		jsFileName := "MoviesByReleaseYearChart.js"
+		// Assume MoviesByReleaseYearChart.js is in the current directory
+		jsFilePath, err := filepath.Abs("./static/js/charts/" + jsFileName)
 		if err != nil {
 			// Log error if path resolution fails
 			log.Printf("Error resolving path for %s: %v", jsFileName, err)
@@ -123,7 +123,7 @@ func main() {
 
 		jsFileName := "ChartConfig.js"
 		// Assume ChartConfig.js is in the current directory
-		jsFilePath, err := filepath.Abs("./" + jsFileName)
+		jsFilePath, err := filepath.Abs("./static/js/" + jsFileName)
 		if err != nil {
 			// Log error if path resolution fails
 			log.Printf("Error resolving path for %s: %v", jsFileName, err)

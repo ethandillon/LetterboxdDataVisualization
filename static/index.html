@@ -14,7 +14,7 @@
 
     <!-- 2. Load your Central Chart Configuration Script -->
     <!-- This script will now also call applyChartDefaults() itself -->
-    <script src="ChartConfig.js"></script>
+    <script src="/ChartConfig.js"></script>
 
     <!-- REMOVED SCRIPT BLOCK THAT CALLED applyChartDefaults on DOMContentLoaded -->
 
@@ -22,12 +22,12 @@
 <body>
     <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-300 py-4">Movies Watched by Release Year</h1>
     <div class="chart-container">
-        <canvas id="filmCountChart"></canvas>
+        <canvas id="MoviesByReleaseYearChart"></canvas>
     </div>
     <div id="errorMessage" class="error-message hidden"></div>
 
     <!-- 3. Load your specific chart rendering script LAST -->
     <!-- 'defer' ensures DOM is ready and it runs after ChartConfig.js -->
-    <script src="ChartRenderingScript.js" defer></script>
+    <script src="/MoviesByReleaseYearChart.js" defer></script>
 </body>
 </html>
