@@ -1,1 +1,2 @@
 DatabaseDump/*.sql linguist-detectable=false
+PythonInitialDataParsingFiles/*.py linguist-detectable=false
