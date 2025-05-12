@@ -24,17 +24,20 @@ type Dataset struct {
 	Data  []int  `json:"data"`  // Counts
 }
 
-// Global variable for the database connection
+// Global variable for the database connection, accessible within package main
 var db *sql.DB
 
-func main() {
+// InitDB initializes the database connection.
+// It's called by main.go
+func InitDB() error {
 	// Load .env file
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file: ", err)
+		// Log as a warning, as environment variables might be set directly (e.g., in production)
+		log.Printf("Warning: Error loading .env file: %v. Will attempt to use system environment variables.", err)
 	}
 
-	// Database connection details from .env
+	// Database connection details from .env or system environment
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 	dbUser := os.Getenv("DB_USER")
@@ -42,8 +45,18 @@ func main() {
 	dbName := os.Getenv("DB_NAME")
 	dbDriver := os.Getenv("DB_DRIVER")
 
+	if dbDriver == "" {
+		dbDriver = "postgres" // Default to postgres if not set
+		log.Println("DB_DRIVER not set, defaulting to 'postgres'")
+	}
+
 	if dbDriver != "postgres" {
-		log.Fatalf("This API is configured for PostgreSQL. Please check DB_DRIVER in .env file. Found: %s", dbDriver)
+		return fmt.Errorf("this API is configured for PostgreSQL. Please check DB_DRIVER in environment. Found: %s", dbDriver)
+	}
+
+	// Basic check for essential connection parameters
+	if dbHost == "" || dbPort == "" || dbUser == "" || dbName == "" {
+		log.Println("Warning: One or more essential DB connection parameters (DB_HOST, DB_PORT, DB_USER, DB_NAME) are missing from environment variables. Connection might fail.")
 	}
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -52,37 +65,28 @@ func main() {
 	// Open database connection
 	db, err = sql.Open(dbDriver, psqlInfo)
 	if err != nil {
-		log.Fatal("Failed to open database connection: ", err)
+		return fmt.Errorf("failed to open database connection: %w", err)
 	}
-	// It's good practice to defer db.Close() here if db is truly global and lives for the app's lifetime.
-	// However, for many web servers, managing connection pools or per-request connections might be better.
-	// For simplicity in this example, we'll keep it global and close on exit if main were to end.
-	// But since ListenAndServe blocks, this defer might not run until server error.
-	// Proper connection management is key in production.
 
 	// Check the connection
 	err = db.Ping()
 	if err != nil {
-		log.Fatal("Failed to ping database: ", err)
+		// It's good practice to close the db if ping fails after open
+		db.Close()
+		return fmt.Errorf("failed to ping database: %w", err)
 	}
-	fmt.Println("Successfully connected to the PostgreSQL database!")
-
-	// Define API endpoints
-	http.HandleFunc("/film-count-by-release-year", filmCountByReleaseYearHandler)
-
-	// Start the server
-	port := os.Getenv("API_PORT")
-	if port == "" {
-		port = "8080" // Default port
-	}
-	fmt.Printf("Server starting on port %s\n", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Println("Successfully connected to the PostgreSQL database!")
+	return nil
 }
 
 func filmCountByReleaseYearHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		log.Println("Error in filmCountByReleaseYearHandler: Database connection is not initialized.")
+		http.Error(w, "Database connection not available", http.StatusInternalServerError)
+		return
+	}
+
 	// Query the database
-	// Since the entire table 'films' contains watched movies,
-	// we group by the 'year' column (which corresponds to release_year).
 	query := `
 		SELECT 
 			year, 
@@ -131,19 +135,17 @@ func filmCountByReleaseYearHandler(w http.ResponseWriter, r *http.Request) {
 		Labels: years,
 		Datasets: []Dataset{
 			{
-				Label: "Movies Watched", // Updated label
+				Label: "Movies Watched",
 				Data:  counts,
-				// Optional: Add some default styling for the chart
-				// BackgroundColor: []string{"rgba(54, 162, 235, 0.2)"}, // Example blue
-				// BorderColor:     []string{"rgba(54, 162, 235, 1)"},
-				// BorderWidth: 1,
 			},
 		},
 	}
 
 	// Set content type to JSON
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*") // Optional: Add CORS header if frontend is on a different domain
+	// CORS header might not be strictly needed if frontend and API are same-origin.
+	// If you encounter CORS issues, uncomment this.
+	// w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Encode and send the JSON response
 	if err := json.NewEncoder(w).Encode(chartData); err != nil {
