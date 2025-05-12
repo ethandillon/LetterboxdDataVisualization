@@ -32,7 +32,7 @@ async function renderChart() {
 
     try {
         // MODIFIED: Fetch from the relative path, now served by the same Go server on port 3000
-        const response = await fetch('/film-count-by-release-year'); 
+        const response = await fetch('/api/film-count-by-release-year'); 
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`API Error: ${response.status} ${errorText || response.statusText}`);
