@@ -2,10 +2,10 @@
 // No 'import Chart from ...' line needed. Chart is global.
 // No 'import ... from ./chartConfig.js'. MyAppCharts is global if needed, but defaults are applied.
 
-let filmChartInstance = null;
+let moviesByReleaseYearChartInstance = null;
 
 async function renderChart() {
-    const errorMessageDiv = document.getElementById('errorMessage');
+    const errorMessageDiv = document.getElementById('ReleaseYearChartErrorMessage');
     const canvasElement = document.getElementById('MoviesByReleaseYearChart');
 
     if (!canvasElement) {
@@ -25,9 +25,9 @@ async function renderChart() {
             existingChartOnCanvas.destroy();
         }
     }
-    if (filmChartInstance) {
-        filmChartInstance.destroy();
-        filmChartInstance = null;
+    if (moviesByReleaseYearChartInstance) {
+        moviesByReleaseYearChartInstance.destroy();
+        moviesByReleaseYearChartInstance = null;
     }
 
     try {
@@ -42,7 +42,7 @@ async function renderChart() {
             throw new Error('Invalid chart data from API.');
         }
 
-        filmChartInstance = new Chart(ctx, {
+        moviesByReleaseYearChartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: chartData.labels,

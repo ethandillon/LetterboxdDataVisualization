@@ -58,9 +58,9 @@ func main() {
 	})
 
 	// Example: Add a route for a new JS chart file for genres
-	mux.HandleFunc("/MoviesByGenreChart.js", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/MoviesByGenrePieChart.js", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		jsFilePath := filepath.Join("static", "js", "charts", "MoviesByGenreChart.js") // Assume you create this file
+		jsFilePath := filepath.Join("static", "js", "charts", "MoviesByGenrePieChart.js") // Assume you create this file
 		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
 	})
 

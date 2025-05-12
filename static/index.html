@@ -20,17 +20,21 @@
 
 </head>
 <body>
-    <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-300 py-4">Movies Watched by Release Year</h1>
+    <h2 class="text-2xl sm:text-3xl font-bold text-center text-gray-300 py-4">Movies Watched by Release Year</h2>
     <div class="chart-container">
         <canvas id="MoviesByReleaseYearChart"></canvas>
     </div>
+    <div id="ReleaseYearChartErrorMessage" class="error-message"></div>
+
+    <h2 class="text-2xl sm:text-3xl font-bold text-center text-gray-300 py-4">Movies Watched by Genre</h2>
     <div class="chart-container">
         <canvas id="MoviesByGenrePieChart"></canvas>
     </div>
-    <div id="errorMessage" class="error-message hidden"></div>
+    <div id="GenreChartErrorMessage" class="error-message"></div>
 
     <!-- 3. Load your specific chart rendering script LAST -->
     <!-- 'defer' ensures DOM is ready and it runs after ChartConfig.js -->
     <script src="/MoviesByReleaseYearChart.js" defer></script>
+    <script src="/MoviesByGenrePieChart.js" defer></script>
 </body>
 </html>
