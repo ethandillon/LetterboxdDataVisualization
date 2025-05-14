@@ -123,15 +123,15 @@ function applyChartDefaults() {
         _deepMerge(Chart.defaults.animation, MyAppCharts.globalOptions.animation);
     }
 
-    // Apply plugin defaults
-    if (MyAppCharts.globalOptions.plugins) {
-        if (MyAppCharts.globalOptions.plugins.legend) {
-            _deepMerge(Chart.defaults.plugins.legend, MyAppCharts.globalOptions.plugins.legend);
-        }
-        if (MyAppCharts.globalOptions.plugins.tooltip) {
-            _deepMerge(Chart.defaults.plugins.tooltip, MyAppCharts.globalOptions.plugins.tooltip);
-        }
-    }
+    // // Apply plugin defaults
+    // if (MyAppCharts.globalOptions.plugins) {
+    //     if (MyAppCharts.globalOptions.plugins.legend) {
+    //         _deepMerge(Chart.defaults.plugins.legend, MyAppCharts.globalOptions.plugins.legend);
+    //     }
+    //     if (MyAppCharts.globalOptions.plugins.tooltip) {
+    //         _deepMerge(Chart.defaults.plugins.tooltip, MyAppCharts.globalOptions.plugins.tooltip);
+    //     }
+    // }
 
     // Apply scale defaults (to Chart.defaults.scale for broad application)
     // We'll use settings from 'x' as the base for Chart.defaults.scale visual properties.
