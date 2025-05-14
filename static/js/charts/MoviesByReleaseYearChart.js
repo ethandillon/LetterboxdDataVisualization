@@ -68,6 +68,9 @@ async function renderChart() {
                     }
                 },
                 plugins: {
+                    title: {
+                        text: "Movies Watched by Release Year"
+                    },
                     tooltip: {
                         callbacks: {
                             label: function(context) {

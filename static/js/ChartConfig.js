@@ -25,6 +25,7 @@ MyAppCharts.colors = {
     gridColor: 'rgba(209, 213, 219, 0.2)',
     tooltipBackground: 'rgba(0,0,0,0.8)',
     tooltipTextColor: '#ffffff',
+    headerTextColor: 'rgb(255, 255, 255)', // Using this for titles
     // ... other colors
 };
 
@@ -43,12 +44,26 @@ MyAppCharts.pieColors = [
 
 MyAppCharts.globalOptions = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false, // Changed to false for better fit in containers
     animation: {
         duration: 1000,
         easing: 'easeInOutQuart',
     },
     plugins: {
+        title: {
+            display: true,
+            align: 'center',
+            padding: {
+                top: 10,
+                bottom: 20
+            },
+            font: {
+                size: 20,
+                weight: 'bold',
+                family: 'Inter',
+            },
+            color: MyAppCharts.colors.headerTextColor,
+        },
         legend: {
             display: true,
             position: 'top',
@@ -58,18 +73,18 @@ MyAppCharts.globalOptions = {
                     size: 12,
                     family: 'Inter'
                 },
-                boxWidth: 12, // Reduced box width for legend items
-                padding: 10    // Spacing between legend items
+                boxWidth: 12,
+                padding: 10
             }
         },
         tooltip: {
             enabled: true,
-            mode: 'nearest', // 'nearest' or 'point' is good for pie/doughnut
+            mode: 'nearest',
             intersect: false,
             backgroundColor: MyAppCharts.colors.tooltipBackground,
             titleColor: MyAppCharts.colors.tooltipTextColor,
             bodyColor: MyAppCharts.colors.tooltipTextColor,
-            displayColors: true, // Show color box in tooltip
+            displayColors: true,
             padding: 10,
             titleFont: {
                 size: 14,
@@ -82,22 +97,20 @@ MyAppCharts.globalOptions = {
             }
         }
     },
-    scales: { // These are conceptual defaults for X and Y axes
-        x: { // Style settings from here will be applied to Chart.defaults.scale
+    scales: {
+        x: {
             title: {
                 display: true,
-                // text: 'Default X Axis', // Removed default text, specific charts should set this
                 font: { size: 14, weight: 'bold', family: 'Inter' },
                 color: MyAppCharts.colors.lightTextColor
             },
             ticks: { color: MyAppCharts.colors.lightTextColor },
             grid: { color: MyAppCharts.colors.gridColor }
         },
-        y: { // Specific properties like beginAtZero and styles (if different)
+        y: {
             beginAtZero: true,
             title: {
                 display: true,
-                // text: 'Default Y Axis', // Removed default text, specific charts should set this
                 font: { size: 14, weight: 'bold', family: 'Inter' },
                 color: MyAppCharts.colors.lightTextColor
             },
@@ -115,13 +128,12 @@ MyAppCharts.defaultBarDatasetOptions = {
     hoverBackgroundColor: MyAppCharts.colors.primaryHover,
 };
 
-// Default options for pie and doughnut chart datasets
 MyAppCharts.defaultPieDoughnutDatasetOptions = {
     backgroundColor: MyAppCharts.pieColors,
-    borderColor: '#1f2937', // Match chart container background for a "cutout" look
+    borderColor: '#1f2937',
     borderWidth: 2,
     hoverOffset: 8,
-    hoverBorderColor: '#374151', // Slightly darker border on hover (Tailwind gray-700)
+    hoverBorderColor: '#374151',
     hoverBorderWidth: 3
 };
 
@@ -138,7 +150,6 @@ function applyChartDefaults() {
 
     console.log("Applying MyAppCharts defaults to Chart.js...");
 
-    // Apply global options using deep merge for objects
     if (MyAppCharts.globalOptions.responsive !== undefined) {
         Chart.defaults.responsive = MyAppCharts.globalOptions.responsive;
     }
@@ -154,6 +165,13 @@ function applyChartDefaults() {
     if (MyAppCharts.globalOptions.plugins) {
         Chart.defaults.plugins = Chart.defaults.plugins || {};
 
+        // *** THIS WAS THE MISSING PIECE ***
+        if (MyAppCharts.globalOptions.plugins.title) {
+            Chart.defaults.plugins.title = Chart.defaults.plugins.title || {};
+            _deepMerge(Chart.defaults.plugins.title, MyAppCharts.globalOptions.plugins.title);
+        }
+        // *** END OF FIX ***
+
         if (MyAppCharts.globalOptions.plugins.legend) {
             Chart.defaults.plugins.legend = Chart.defaults.plugins.legend || {};
             _deepMerge(Chart.defaults.plugins.legend, MyAppCharts.globalOptions.plugins.legend);
@@ -164,13 +182,12 @@ function applyChartDefaults() {
         }
     }
 
-    // Apply scale defaults (to Chart.defaults.scale for broad application)
     if (MyAppCharts.globalOptions.scales) {
         const xStyleDefaults = MyAppCharts.globalOptions.scales.x;
         if (xStyleDefaults) {
             Chart.defaults.scale.title = Chart.defaults.scale.title || {};
             _deepMerge(Chart.defaults.scale.title, xStyleDefaults.title);
-            if (Chart.defaults.scale.title) delete Chart.defaults.scale.title.text; // Remove default text
+            if (Chart.defaults.scale.title) delete Chart.defaults.scale.title.text;
 
             Chart.defaults.scale.ticks = Chart.defaults.scale.ticks || {};
             _deepMerge(Chart.defaults.scale.ticks, xStyleDefaults.ticks);
@@ -180,23 +197,22 @@ function applyChartDefaults() {
         }
         
         const ySpecificDefaults = MyAppCharts.globalOptions.scales.y;
-        if (ySpecificDefaults && ySpecificDefaults.beginAtZero !== undefined) {
-            // For Chart.js v4, linear scale options are under scales.linear
-            Chart.defaults.scales.linear = Chart.defaults.scales.linear || {};
-            Chart.defaults.scales.linear.beginAtZero = ySpecificDefaults.beginAtZero;
+        if (ySpecificDefaults) { // Check if ySpecificDefaults exists
+            if (ySpecificDefaults.beginAtZero !== undefined) {
+                Chart.defaults.scales.linear = Chart.defaults.scales.linear || {};
+                Chart.defaults.scales.linear.beginAtZero = ySpecificDefaults.beginAtZero;
+            }
+            // For y-axis title, ticks, grid, if they were different from x, you'd merge them specifically
+            // For now, they'll inherit from the general Chart.defaults.scale settings applied via xStyleDefaults
         }
-        // Note: y-axis title styles will inherit from general scale.title styles if not overridden
-        // Text itself must be set per chart.
     }
 
-    // Merge dataset specific defaults
     if (MyAppCharts.defaultBarDatasetOptions) {
         Chart.defaults.datasets = Chart.defaults.datasets || {};
         Chart.defaults.datasets.bar = Chart.defaults.datasets.bar || {};
         _deepMerge(Chart.defaults.datasets.bar, MyAppCharts.defaultBarDatasetOptions);
     }
     
-    // Add defaults for pie and doughnut datasets
     if (MyAppCharts.defaultPieDoughnutDatasetOptions) {
         Chart.defaults.datasets = Chart.defaults.datasets || {};
         Chart.defaults.datasets.pie = Chart.defaults.datasets.pie || {};
@@ -206,9 +222,8 @@ function applyChartDefaults() {
         _deepMerge(Chart.defaults.datasets.doughnut, MyAppCharts.defaultPieDoughnutDatasetOptions);
     }
 
-    console.log("Chart.js defaults after MyAppCharts merge:", JSON.parse(JSON.stringify(Chart.defaults)));
+    console.log("Chart.js defaults AFTER MyAppCharts merge (Title):", JSON.parse(JSON.stringify(Chart.defaults.plugins.title)));
+    // console.log("Chart.js defaults after MyAppCharts merge (Full):", JSON.parse(JSON.stringify(Chart.defaults))); // For more extensive debugging
 }
 
-// Call applyChartDefaults directly at the end of this script.
-// This assumes Chart.js has been loaded before this script.
 applyChartDefaults();

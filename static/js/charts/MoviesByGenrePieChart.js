@@ -59,6 +59,9 @@ async function renderChart() {
             options: {
                 cutout: '50%', // Adjust for doughnut thickness (e.g., '50%' for thicker, '70%' for thinner)
                 plugins: {
+                    title: {
+                        text: "Movies Watched by Genre"
+                    },
                     legend: {
                         labels: {
                             usePointStyle: true, // Use circular legend color indicators
