@@ -14,25 +14,24 @@ body {
 }
 
 .chart-container {
-    position: relative;
-    width: 100%;
+    width: 90%;
     max-width: 700px; /* Slightly increased max-width from 600px */
-    height: 75vh; /* Graph height to be 75% of viewport height */
     background-color: #1f2937; /* Darker container background (Tailwind gray-800) */
     padding: 20px;
+    border-top: 10px;
     border-radius: 12px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4); /* Adjusted shadow for dark mode */
-    margin-top: 10px; /* Reduced margin-top */
-    margin-bottom: 20px; /* Added margin-bottom */
+    position: relative;
+
 }
 
 canvas {
     display: block;
-    /* width: 100% !important;
-    height: 100% !important; Ensure canvas takes full height of container */
+    width: 100% !important;
+    height: 100% !important;  /*Ensure canvas takes full height of container */
 }
 
-h2 {
+h1 {
     width: 100%; /* Ensure h1 takes full width for centering text */
     /* text-gray-300 class is applied in HTML for dark mode */
 }

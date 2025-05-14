@@ -43,7 +43,7 @@ MyAppCharts.pieColors = [
 
 MyAppCharts.globalOptions = {
     responsive: true,
-    maintainAspectRatio: false,
+    maintainAspectRatio: true,
     animation: {
         duration: 1000,
         easing: 'easeInOutQuart',
