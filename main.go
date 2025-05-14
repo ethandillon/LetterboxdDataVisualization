@@ -70,6 +70,12 @@ func main() {
 		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
 	})
 
+	mux.HandleFunc("/fullscreenChart.js", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
+		jsFilePath := filepath.Join("static", "js", "fullscreenChart.js")
+		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
+	})
+
 	// --- API Endpoints ---
 	// Using /api/ prefix for API routes is a good practice
 	mux.HandleFunc("/api/film-count-by-release-year", filmCountByReleaseYearHandler)

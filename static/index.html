@@ -3,38 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movies Watched by Release Year</title>
+    <title>Movies Watched Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- 1. Load Chart.js Library FIRST -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-    <!-- Using UMD build, which makes 'Chart' globally available -->
-
-    <!-- 2. Load your Central Chart Configuration Script -->
-    <!-- This script will now also call applyChartDefaults() itself -->
     <script src="/ChartConfig.js"></script>
-
-    <!-- REMOVED SCRIPT BLOCK THAT CALLED applyChartDefaults on DOMContentLoaded -->
-
 </head>
 <body>
     <h2 class="text-2xl sm:text-3xl font-bold text-center text-gray-300 py-4">Movies Watched by Release Year</h2>
     <div class="chart-container">
+        <button class="fullscreen-btn" data-chart-id="MoviesByReleaseYearChart" aria-label="Toggle fullscreen for Release Year chart">↗</button>
         <canvas id="MoviesByReleaseYearChart"></canvas>
     </div>
-    <div id="ReleaseYearChartErrorMessage" class="error-message"></div>
+    <div id="ReleaseYearChartErrorMessage" class="error-message hidden"></div>
 
     <h2 class="text-2xl sm:text-3xl font-bold text-center text-gray-300 py-4">Movies Watched by Genre</h2>
     <div class="chart-container">
+        <button class="fullscreen-btn" data-chart-id="MoviesByGenrePieChart" aria-label="Toggle fullscreen for Genre chart">↗</button>
         <canvas id="MoviesByGenrePieChart"></canvas>
     </div>
-    <div id="GenreChartErrorMessage" class="error-message"></div>
+    <div id="GenreChartErrorMessage" class="error-message hidden"></div>
 
-    <!-- 3. Load your specific chart rendering script LAST -->
-    <!-- 'defer' ensures DOM is ready and it runs after ChartConfig.js -->
+    <!-- Fullscreen Overlay and Container -->
+    <div id="fullscreenOverlay" class="fullscreen-overlay hidden"></div>
+    <div id="fullscreenChartHost" class="fullscreen-chart-host hidden">
+        <button id="closeFullscreenBtn" class="close-fullscreen-btn" aria-label="Close fullscreen view">×</button>
+        <div class="fullscreen-canvas-container">
+            <canvas id="fullscreenCanvas"></canvas>
+        </div>
+    </div>
+
     <script src="/MoviesByReleaseYearChart.js" defer></script>
     <script src="/MoviesByGenrePieChart.js" defer></script>
+    <script src="/fullscreenChart.js" defer></script> <!-- New JS file for fullscreen logic -->
 </body>
 </html>
