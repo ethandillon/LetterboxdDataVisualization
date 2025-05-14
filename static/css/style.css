@@ -28,11 +28,11 @@ body {
 
 canvas {
     display: block;
-    width: 100% !important;
-    height: 100% !important; /* Ensure canvas takes full height of container */
+    /* width: 100% !important;
+    height: 100% !important; Ensure canvas takes full height of container */
 }
 
-h1 {
+h2 {
     width: 100%; /* Ensure h1 takes full width for centering text */
     /* text-gray-300 class is applied in HTML for dark mode */
 }

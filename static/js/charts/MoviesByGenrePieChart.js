@@ -31,8 +31,7 @@ async function renderChart() {
     }
 
     try {
-        // MODIFIED: Fetch from the relative path, now served by the same Go server on port 3000
-        const response = await fetch('/api/film-count-by-genre'); 
+        const response = await fetch('/api/film-count-by-genre');
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`API Error: ${response.status} ${errorText || response.statusText}`);
@@ -43,14 +42,51 @@ async function renderChart() {
         }
 
         moviesByGenrePieChartInstance = new Chart(ctx, {
-            type: 'pie',
+            type: 'doughnut', // Changed to doughnut
             data: {
                 labels: chartData.labels,
                 datasets: chartData.datasets.map(dataset => ({
                     label: dataset.label || 'Movies Watched',
-                    data: dataset.data
+                    data: dataset.data,
+                    backgroundColor: MyAppCharts.pieColors, // Use our defined palette
+                    borderColor: '#1f2937',      // Match chart container background (Tailwind gray-800)
+                    borderWidth: 2,
+                    hoverOffset: 10,              // Slightly larger pop-out on hover
+                    hoverBorderColor: '#374151',  // Tailwind gray-700 for hover border
+                    hoverBorderWidth: 3
                 }))
             },
+            options: {
+                cutout: '50%', // Adjust for doughnut thickness (e.g., '50%' for thicker, '70%' for thinner)
+                plugins: {
+                    legend: {
+                        labels: {
+                            usePointStyle: true, // Use circular legend color indicators
+                            boxWidth: 10         // Smaller box width for point style
+                        }
+                    },
+                    tooltip: {
+                        // mode: 'point', // Already set to 'nearest' globally, which is fine.
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || ''; // Genre name
+                                if (label) { label += ': '; }
+                                if (context.parsed !== null) {
+                                    label += context.parsed; // The value of the slice
+
+                                    // Calculate and add percentage
+                                    const total = context.chart.getDatasetMeta(0).total;
+                                    if (total > 0) {
+                                        const percentage = ((context.parsed / total) * 100).toFixed(1) + '%';
+                                        label += ` (${percentage})`;
+                                    }
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
         });
         if (errorMessageDiv) errorMessageDiv.classList.add('hidden');
     } catch (error) {
