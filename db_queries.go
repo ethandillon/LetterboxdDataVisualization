@@ -88,7 +88,7 @@ func FetchFilmCountsByGenre() (ChartData, error) {
 		GROUP BY 
 			g.genre_name 
 		ORDER BY 
-			g.genre_name ASC; -- Order alphabetically for consistent chart display
+			movie_count DESC;
 	`
 	rows, err := db.Query(query)
 	if err != nil {
