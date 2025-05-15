@@ -4,25 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movies Watched Dashboard</title>
+    <!-- Bootstrap CSS FIRST -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <!-- Your Custom CSS SECOND -->
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="/ChartConfig.js"></script>
 </head>
 <body>
-    <div class="chart-container">
-        <button class="fullscreen-btn" data-chart-id="MoviesByReleaseYearChart" aria-label="Toggle fullscreen for Release Year chart">↗</button>
-        <canvas id="MoviesByReleaseYearChart"></canvas>
+    <div class="container mt-4 mb-4"> 
+        <div class="row g-4 d-flex align-items-stretch"> 
+            <div class="col-md-6 d-flex flex-column"> 
+                <div class="chart-container"> 
+                    <button class="fullscreen-btn" data-chart-id="MoviesByReleaseYearChart" aria-label="Toggle fullscreen for Release Year chart">↗</button>
+                    <canvas id="MoviesByReleaseYearChart"></canvas>
+                </div>
+                <div id="ReleaseYearChartErrorMessage" class="error-message hidden mt-2"></div>
+            </div>
+            <div class="col-md-6 d-flex flex-column"> 
+                <div class="chart-container"> 
+                    <button class="fullscreen-btn" data-chart-id="MoviesByGenrePieChart" aria-label="Toggle fullscreen for Genre chart">↗</button>
+                    <canvas id="MoviesByGenrePieChart"></canvas>
+                </div>
+                <div id="GenreChartErrorMessage" class="error-message hidden mt-2"></div>
+            </div>
+        </div>
     </div>
-    <div id="ReleaseYearChartErrorMessage" class="error-message hidden"></div>
-
-    <div class="chart-container">
-        <button class="fullscreen-btn" data-chart-id="MoviesByGenrePieChart" aria-label="Toggle fullscreen for Genre chart">↗</button>
-        <canvas id="MoviesByGenrePieChart"></canvas>
-    </div>
-    <div id="GenreChartErrorMessage" class="error-message hidden"></div>
 
     <!-- Fullscreen Overlay and Container -->
     <div id="fullscreenOverlay" class="fullscreen-overlay hidden"></div>
@@ -35,6 +44,6 @@
 
     <script src="/MoviesByReleaseYearChart.js" defer></script>
     <script src="/MoviesByGenrePieChart.js" defer></script>
-    <script src="/fullscreenChart.js" defer></script> <!-- New JS file for fullscreen logic -->
+    <script src="/fullscreenChart.js" defer></script>
 </body>
 </html>
