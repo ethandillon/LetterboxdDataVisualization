@@ -63,6 +63,7 @@ async function renderChart() {
                         text: "Movies Watched by Genre"
                     },
                     legend: {
+                        display: false,
                         labels: {
                             usePointStyle: true, // Use circular legend color indicators
                             boxWidth: 10         // Smaller box width for point style

@@ -37,6 +37,30 @@ document.addEventListener('DOMContentLoaded', () => {
             chartConfig.options = { maintainAspectRatio: false, responsive: true };
         }
 
+        if(chartId === 'MoviesByGenrePieChart') {
+            chartConfig.options.plugins.legend = {
+                ...chartConfig.options.plugins.legend,
+                display: true,
+                position: 'top',                      // Or 'bottom', 'left', 'right' as preferred for fullscreen
+                align: 'center',                      // 'start', 'center', 'end'
+                labels: {
+                    ...(chartConfig.options.plugins.legend && chartConfig.options.plugins.legend.labels), // Spread existing label options
+                    color: MyAppCharts.colors.lightTextColor, // Ensure color is set (from global or specify)
+                    font: { size: 12, family: 'Inter' },      // Ensure font (from global or specify)
+                    usePointStyle: true,
+                    boxWidth: 10,
+                    padding: 15 // Maybe more padding for fullscreen
+            }
+        };
+    } else if (chartConfig.options.plugins.legend) {
+            // For other charts, ensure their default legend display state is respected
+            // or explicitly set it if needed for fullscreen consistency.
+            // If their legend.display was already true, this doesn't change it.
+            // If it was false, it remains false unless you explicitly set it to true here.
+            // For example, to ensure all fullscreen charts show legends:
+            // chartConfig.options.plugins.legend.display = true;
+        }
+
 
         // Destroy previous fullscreen chart instance if it exists
         if (fullscreenChartInstance) {
