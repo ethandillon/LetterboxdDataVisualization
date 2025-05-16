@@ -32,6 +32,8 @@ body {
 .pie-chart-container{
         height: 65vh;
         width: 65vh;
+        margin-left: auto;
+        margin-right: auto;
 }
 
 .chart-container canvas { /* Target canvas specifically inside chart-container */
