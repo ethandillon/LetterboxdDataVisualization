@@ -30,7 +30,8 @@ body {
 }
 
 .pie-chart-container{
-        aspect-ratio: 1 / 1;
+        height: 65vh;
+        width: 65vh;
 }
 
 .chart-container canvas { /* Target canvas specifically inside chart-container */
