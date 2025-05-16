@@ -23,9 +23,14 @@ body {
     position: relative;
     display: flex; /* Make it a flex container */
     flex-direction: column; /* Stack children (like canvas) vertically */
-    /* REMOVE FIXED HEIGHT - height: 75vh; */
-    /* h-100 class from Bootstrap will be used if its parent col has a determined height */
+}
+
+.bar-chart-container{
     height: 65vh;
+}
+
+.pie-chart-container{
+        aspect-ratio: 1 / 1;
 }
 
 .chart-container canvas { /* Target canvas specifically inside chart-container */
