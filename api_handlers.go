@@ -113,3 +113,30 @@ func topDirectorsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("JSON encoding error for top 5 directors chart:", err)
 	}
 }
+
+func topActorsHandler(w http.ResponseWriter, r *http.Request) {
+	limitStr := r.URL.Query().Get("limit")
+	limit := 25 // Default to 25 if no limit is specified or if parsing fails
+
+	if limitStr != "" {
+		parsedLimit, err := strconv.Atoi(limitStr)
+		if err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		} else {
+			log.Printf("Invalid limit parameter: %s. Using default %d.", limitStr, limit)
+		}
+	}
+
+	chartData, err := FetchTopActors(limit) // Call function from db_queries.go
+	if err != nil {
+		log.Printf("Error fetching top Actors data with limit %d: %v", limit, err)
+		http.Error(w, "Failed to fetch top Actors data", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(chartData); err != nil {
+		http.Error(w, "Failed to encode JSON response: "+err.Error(), http.StatusInternalServerError)
+		log.Println("JSON encoding error for top 5 Actors chart:", err)
+	}
+}

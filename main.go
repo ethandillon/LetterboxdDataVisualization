@@ -12,12 +12,6 @@ func main() {
 	if err := InitDB(); err != nil {
 		log.Fatalf("FATAL: Failed to initialize database: %v. Server cannot start without DB.", err)
 	}
-	// defer func() { // Ensure DB connection is closed when main exits (e.g., on server error)
-	// 	if db != nil {
-	// 		log.Println("Closing database connection on server shutdown...")
-	// 		db.Close()
-	// 	}
-	// }()
 
 	port := "3000"
 	mux := http.NewServeMux()
@@ -60,13 +54,19 @@ func main() {
 	// Example: Add a route for a new JS chart file for genres
 	mux.HandleFunc("/MoviesByGenrePieChart.js", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		jsFilePath := filepath.Join("static", "js", "charts", "MoviesByGenrePieChart.js") // Assume you create this file
+		jsFilePath := filepath.Join("static", "js", "charts", "MoviesByGenrePieChart.js")
 		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
 	})
 
 	mux.HandleFunc("/TopDirectorsChart.js", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		jsFilePath := filepath.Join("static", "js", "charts", "TopDirectorsChart.js") // Assume you create this file
+		jsFilePath := filepath.Join("static", "js", "charts", "TopDirectorsChart.js")
+		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
+	})
+
+	mux.HandleFunc("/TopActorsChart.js", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
+		jsFilePath := filepath.Join("static", "js", "charts", "TopActorsChart.js")
 		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
 	})
 
@@ -87,6 +87,7 @@ func main() {
 	mux.HandleFunc("/api/film-count-by-release-year", filmCountByReleaseYearHandler)
 	mux.HandleFunc("/api/film-count-by-genre", filmCountByGenreHandler)
 	mux.HandleFunc("/api/top-directors", topDirectorsHandler)
+	mux.HandleFunc("/api/top-actors", topActorsHandler)
 
 	log.Printf("API endpoint /api/film-count-by-release-year registered.")
 	log.Printf("API endpoint /api/film-count-by-genre registered.")

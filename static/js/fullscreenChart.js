@@ -51,6 +51,35 @@ document.addEventListener('DOMContentLoaded', () => {
             dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
         }
 
+        if (chartId === 'TopActorsChart') {
+            try {
+                // Fetch the top 25 actors data specifically for fullscreen
+                const response = await fetch('/api/top-actors?limit=25');
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`API Error fetching top 25 actors: ${response.status} ${errorText}`);
+                    // Fallback to original chart data if fetch fails
+                    dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
+                } else {
+                    dataForFullscreen = await response.json();
+                    // Update titles in options for the fullscreen view (Top 25)
+                    if (optionsForFullscreen.scales?.x?.title) {
+                        optionsForFullscreen.scales.x.title.text = 'Actor (Top 25)';
+                    }
+                    if (optionsForFullscreen.plugins?.title) {
+                        optionsForFullscreen.plugins.title.text = 'Top 25 Actors by Film Count';
+                    }
+                }
+            } catch (fetchError) {
+                console.error('Error fetching top 25 actors data:', fetchError);
+                // Fallback to original chart data on fetch error
+                dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
+            }
+        } else {
+            // For other charts, use their existing config data
+            dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
+        }
+
         const chartConfig = {
             type: originalChartInstance.config.type,
             data: dataForFullscreen,

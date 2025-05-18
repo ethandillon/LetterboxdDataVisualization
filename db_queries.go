@@ -189,3 +189,64 @@ func FetchTopDirectors(limit int) (ChartData, error) {
 	}
 	return chartData, nil
 }
+
+func FetchTopActors(limit int) (ChartData, error) {
+	if db == nil {
+		log.Println("FetchTopActors: Database connection is not initialized.")
+		return ChartData{}, sql.ErrConnDone // Or a more specific error
+	}
+
+	// Query to get the top 5 Actors by film count
+	query := fmt.Sprintf(`
+		SELECT 
+			g.actors_name, 
+			COUNT(*) as movie_count 
+		FROM 
+			films,
+			UNNEST(actors) AS g(actors_name) -- Unnest the array and alias the resulting column
+		WHERE 
+			g.actors_name IS NOT NULL AND g.actors_name <> '' -- Filter out NULL or empty genres
+		GROUP BY 
+			g.actors_name 
+		ORDER BY 
+			movie_count DESC
+		LIMIT %d;
+	`, limit)
+
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Println("Database query error in FetchTopActors:", err)
+		return ChartData{}, err
+	}
+	defer rows.Close()
+
+	var directorNames []string
+	var filmCounts []int
+
+	for rows.Next() {
+		var directorName string
+		var count int
+		if err := rows.Scan(&directorName, &count); err != nil {
+			log.Println("Row scanning error in FetchTopActors:", err)
+			return ChartData{}, err
+		}
+		directorNames = append(directorNames, directorName)
+		filmCounts = append(filmCounts, count)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println("Rows iteration error in FetchTopActors:", err)
+		return ChartData{}, err
+	}
+
+	chartData := ChartData{
+		Labels: directorNames,
+		Datasets: []Dataset{
+			{
+				Label: "Top Actors by Film Count",
+				Data:  filmCounts,
+			},
+		},
+	}
+	return chartData, nil
+}

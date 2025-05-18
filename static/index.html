@@ -37,6 +37,13 @@
                 </div>
                 <div id="TopDirectorsChartErrorMessage" class="error-message hidden mt-2"></div>
             </div>
+            <div class="col-md-6 d-flex flex-column"> 
+                <div class="chart-container bar-chart-container"> 
+                    <button class="fullscreen-btn" data-chart-id="TopActorsChart" aria-label="Toggle fullscreen for Release Year chart">↗</button>
+                    <canvas id="TopActorsChart"></canvas>
+                </div>
+                <div id="TopActorsChartErrorMessage" class="error-message hidden mt-2"></div>
+            </div>
         </div>
     </div>
 
@@ -52,6 +59,7 @@
     <script src="/MoviesByReleaseYearChart.js" defer></script>
     <script src="/MoviesByGenrePieChart.js" defer></script>
     <script src="/TopDirectorsChart.js" defer></script>
+    <script src="/TopActorsChart.js" defer></script>
     <script src="/fullscreenChart.js" defer></script>
 </body>
 </html>
