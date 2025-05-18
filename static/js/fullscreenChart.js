@@ -54,7 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const chartConfig = {
             type: originalChartInstance.config.type,
             data: dataForFullscreen,
-            options: optionsForFullscreen // Use the (potentially modified) cloned options
+            options: {
+                ...optionsForFullscreen,
+                animation: false,
+                maintainAspectRatio: false,
+                responsive: true
+            }
         };
 
         // Ensure maintainAspectRatio is false for the fullscreen chart for better responsiveness
