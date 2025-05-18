@@ -64,9 +64,9 @@ func main() {
 		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
 	})
 
-	mux.HandleFunc("/Top5DirectorsChart.js", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/TopDirectorsChart.js", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		jsFilePath := filepath.Join("static", "js", "charts", "Top5DirectorsChart.js") // Assume you create this file
+		jsFilePath := filepath.Join("static", "js", "charts", "TopDirectorsChart.js") // Assume you create this file
 		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
 	})
 
@@ -86,17 +86,17 @@ func main() {
 	// Using /api/ prefix for API routes is a good practice
 	mux.HandleFunc("/api/film-count-by-release-year", filmCountByReleaseYearHandler)
 	mux.HandleFunc("/api/film-count-by-genre", filmCountByGenreHandler)
-	mux.HandleFunc("/api/top-five-directors", topFiveDirectorsHandler)
+	mux.HandleFunc("/api/top-directors", topDirectorsHandler)
 
 	log.Printf("API endpoint /api/film-count-by-release-year registered.")
 	log.Printf("API endpoint /api/film-count-by-genre registered.")
-	log.Printf("API endpoint /api/top-five-directors registered.")
+	log.Printf("API endpoint /api/top-directors registered.")
 
 	log.Printf("Server starting on port %s...", port)
 	log.Printf("Access the application at http://localhost:%s/", port)
 	log.Printf("API data by year: http://localhost:%s/api/film-count-by-release-year", port)
 	log.Printf("API data by genre: http://localhost:%s/api/film-count-by-genre", port)
-	log.Printf("API data by top directors: http://localhost:%s/api/top-five-directors", port)
+	log.Printf("API data by top directors: http://localhost:%s/api/top-directors", port)
 
 	serverErr := http.ListenAndServe(":"+port, mux)
 	if serverErr != nil {

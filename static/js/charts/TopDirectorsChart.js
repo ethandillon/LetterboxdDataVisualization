@@ -5,8 +5,8 @@
 let topDirectorsChartInstance = null;
 
 async function renderTopDirectorsChart() {
-    const errorMessageDiv = document.getElementById('Top5DirectorsChartErrorMessage');
-    const canvasElement = document.getElementById('Top5DirectorsChart');
+    const errorMessageDiv = document.getElementById('TopDirectorsChartErrorMessage');
+    const canvasElement = document.getElementById('TopDirectorsChart');
 
     if (!canvasElement) {
         console.error("Canvas element 'TopDirectorsChart' not found.");
@@ -31,26 +31,21 @@ async function renderTopDirectorsChart() {
     }
 
     try {
-        // Fetch data for top five directors
-        const response = await fetch('/api/top-five-directors');
+        // Fetch data for top 5 directors for initial display
+        const response = await fetch('/api/top-directors?limit=5'); // Fetch only top 5
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`API Error: ${response.status} ${errorText || response.statusText}`);
         }
-        const chartData = await response.json();
+        const chartData = await response.json(); // Contains data for top 5
         if (!chartData || !chartData.labels || !chartData.datasets) {
-            throw new Error('Invalid chart data for Top Directors from API.');
+            throw new Error('Invalid chart data for Top 5 Directors from API.');
         }
+
 
         topDirectorsChartInstance = new Chart(ctx, {
             type: 'bar', // Or 'pie', 'doughnut', 'horizontalBar' if you prefer
-            data: {
-                labels: chartData.labels, // Director names
-                datasets: chartData.datasets.map(dataset => ({
-                    label: dataset.label || 'Number of Films', // Fallback label
-                    data: dataset.data, 
-                }))
-            },
+            data: chartData,
             options: {
                 responsive: true,
                 maintainAspectRatio: false, // Adjust as needed

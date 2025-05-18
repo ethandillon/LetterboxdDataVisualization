@@ -7,62 +7,90 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeFullscreenBtn = document.getElementById('closeFullscreenBtn');
     const fullscreenBtns = document.querySelectorAll('.fullscreen-btn');
 
-    let fullscreenChartInstance = null; // To hold the Chart.js instance for the fullscreen view
-    let originalChartInstance = null; // To hold the original chart instance
+    let fullscreenChartInstance = null;
 
-    function enterFullscreen(chartId) {
-        originalChartInstance = Chart.getChart(chartId); // Get the Chart.js instance of the original chart
+    async function enterFullscreen(chartId) {
+        const originalChartInstance = Chart.getChart(chartId);
 
         if (!originalChartInstance) {
             console.error('Original chart instance not found for ID:', chartId);
             return;
         }
 
-        // Clone the configuration of the original chart
-        // Important: Use originalChartInstance.config to get all data, options, type
+        let dataForFullscreen;
+        // Deep clone original options to modify them safely for fullscreen
+        let optionsForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.options));
+
+        // --- MODIFICATION FOR TOP DIRECTORS CHART ---
+        if (chartId === 'TopDirectorsChart') {
+            try {
+                // Fetch the top 25 directors data specifically for fullscreen
+                const response = await fetch('/api/top-directors?limit=25');
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`API Error fetching top 25 directors: ${response.status} ${errorText}`);
+                    // Fallback to original chart data if fetch fails
+                    dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
+                } else {
+                    dataForFullscreen = await response.json();
+                    // Update titles in options for the fullscreen view (Top 25)
+                    if (optionsForFullscreen.scales?.x?.title) {
+                        optionsForFullscreen.scales.x.title.text = 'Director (Top 25)';
+                    }
+                    if (optionsForFullscreen.plugins?.title) {
+                        optionsForFullscreen.plugins.title.text = 'Top 25 Directors by Film Count';
+                    }
+                }
+            } catch (fetchError) {
+                console.error('Error fetching top 25 directors data:', fetchError);
+                // Fallback to original chart data on fetch error
+                dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
+            }
+        } else {
+            // For other charts, use their existing config data
+            dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
+        }
+
         const chartConfig = {
             type: originalChartInstance.config.type,
-            data: JSON.parse(JSON.stringify(originalChartInstance.config.data)), // Deep clone data
-            options: JSON.parse(JSON.stringify(originalChartInstance.config.options)) // Deep clone options
+            data: dataForFullscreen,
+            options: optionsForFullscreen // Use the (potentially modified) cloned options
         };
-        
+
         // Ensure maintainAspectRatio is false for the fullscreen chart for better responsiveness
         if (chartConfig.options) {
             chartConfig.options.maintainAspectRatio = false;
-            chartConfig.options.responsive = true; // Ensure it's responsive
-             // Optional: if legends/tooltips get obscured, you might need to adjust their containers
-            // or re-evaluate their z-index if they are rendered outside the canvas.
-            // For most cases, Chart.js handles this well within its canvas.
+            chartConfig.options.responsive = true;
         } else {
             chartConfig.options = { maintainAspectRatio: false, responsive: true };
         }
 
-        if(chartId === 'MoviesByGenrePieChart') {
+        // Specific legend handling for MoviesByGenrePieChart (as in your original code)
+        if (chartId === 'MoviesByGenrePieChart') {
+            // Ensure plugins object and legend object exist before trying to modify/spread them
+            chartConfig.options.plugins = chartConfig.options.plugins || {};
+            chartConfig.options.plugins.legend = chartConfig.options.plugins.legend || {};
+            const existingLabelOptions = chartConfig.options.plugins.legend.labels || {};
+
             chartConfig.options.plugins.legend = {
-                ...chartConfig.options.plugins.legend,
+                ...chartConfig.options.plugins.legend, // Spread existing general legend options
                 display: true,
-                position: 'top',                      // Or 'bottom', 'left', 'right' as preferred for fullscreen
-                align: 'center',                      // 'start', 'center', 'end'
+                position: 'top',
+                align: 'center',
                 labels: {
-                    ...(chartConfig.options.plugins.legend && chartConfig.options.plugins.legend.labels), // Spread existing label options
-                    color: MyAppCharts.colors.lightTextColor, // Ensure color is set (from global or specify)
-                    font: { size: 12, family: 'Inter' },      // Ensure font (from global or specify)
+                    ...existingLabelOptions, // Spread existing label options
+                    color: (typeof MyAppCharts !== 'undefined' && MyAppCharts.colors) ? MyAppCharts.colors.lightTextColor : '#FFFFFF', // Fallback color
+                    font: { size: 12, family: 'Inter' },
                     usePointStyle: true,
                     boxWidth: 10,
-                    padding: 15 // Maybe more padding for fullscreen
-            }
-        };
-    } else if (chartConfig.options.plugins.legend) {
-            // For other charts, ensure their default legend display state is respected
-            // or explicitly set it if needed for fullscreen consistency.
-            // If their legend.display was already true, this doesn't change it.
-            // If it was false, it remains false unless you explicitly set it to true here.
-            // For example, to ensure all fullscreen charts show legends:
-            // chartConfig.options.plugins.legend.display = true;
+                    padding: 15
+                }
+            };
         }
+        // The original 'else if (chartConfig.options.plugins.legend)' for other charts
+        // is implicitly handled because we are cloning the entire options object.
+        // If a chart's legend was displayed, it will remain displayed unless overridden.
 
-
-        // Destroy previous fullscreen chart instance if it exists
         if (fullscreenChartInstance) {
             fullscreenChartInstance.destroy();
         }
@@ -72,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         fullscreenOverlay.classList.remove('hidden');
         fullscreenChartHost.classList.remove('hidden');
-        document.body.classList.add('fullscreen-active'); // Prevent body scroll
+        document.body.classList.add('fullscreen-active');
     }
 
     function exitFullscreen() {
@@ -80,8 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
             fullscreenChartInstance.destroy();
             fullscreenChartInstance = null;
         }
-        originalChartInstance = null; // Clear reference
-
         fullscreenOverlay.classList.add('hidden');
         fullscreenChartHost.classList.add('hidden');
         document.body.classList.remove('fullscreen-active');
@@ -89,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     fullscreenBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            const chartId = btn.dataset.chartId;
+            const chartId = btn.dataset.chartId; // e.g., "TopDirectorsChart", "MoviesByGenrePieChart"
             if (chartId) {
                 enterFullscreen(chartId);
             }
@@ -97,9 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     closeFullscreenBtn.addEventListener('click', exitFullscreen);
-    fullscreenOverlay.addEventListener('click', exitFullscreen); // Optional: close by clicking overlay
+    fullscreenOverlay.addEventListener('click', exitFullscreen);
 
-    // Optional: Close fullscreen with Escape key
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && !fullscreenChartHost.classList.contains('hidden')) {
             exitFullscreen();

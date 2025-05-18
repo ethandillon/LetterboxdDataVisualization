@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 
+	"strconv"
+
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -85,10 +87,23 @@ func filmCountByGenreHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func topFiveDirectorsHandler(w http.ResponseWriter, r *http.Request) {
-	chartData, err := FetchTopFiveDirectors() // Call function from db_queries.go
+func topDirectorsHandler(w http.ResponseWriter, r *http.Request) {
+	limitStr := r.URL.Query().Get("limit")
+	limit := 25 // Default to 25 if no limit is specified or if parsing fails
+
+	if limitStr != "" {
+		parsedLimit, err := strconv.Atoi(limitStr)
+		if err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		} else {
+			log.Printf("Invalid limit parameter: %s. Using default %d.", limitStr, limit)
+		}
+	}
+
+	chartData, err := FetchTopDirectors(limit) // Call function from db_queries.go
 	if err != nil {
-		http.Error(w, "Failed to fetch top 5 directors: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error fetching top directors data with limit %d: %v", limit, err)
+		http.Error(w, "Failed to fetch top directors data", http.StatusInternalServerError)
 		return
 	}
 

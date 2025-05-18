@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"strconv"
 )
@@ -128,31 +129,32 @@ func FetchFilmCountsByGenre() (ChartData, error) {
 	return chartData, nil
 }
 
-// FetchTopFiveDirectors retrieves the top 5 directors by the number of films they directed.
-func FetchTopFiveDirectors() (ChartData, error) {
+// FetchTopDirectors retrieves the top 5 directors by the number of films they directed.
+func FetchTopDirectors(limit int) (ChartData, error) {
 	if db == nil {
-		log.Println("FetchTopFiveDirectors: Database connection is not initialized.")
+		log.Println("FetchTopDirectors: Database connection is not initialized.")
 		return ChartData{}, sql.ErrConnDone // Or a more specific error
 	}
 
 	// Query to get the top 5 directors by film count
-	query := `
+	query := fmt.Sprintf(`
 		SELECT
 			director,
 			COUNT(*) as film_count
 		FROM
-			films  -- Assuming your table name is 'films'
+			films
 		WHERE
-			director IS NOT NULL AND director <> '' -- Filter out NULL or empty director names
+			director IS NOT NULL AND director <> ''
 		GROUP BY
 			director
 		ORDER BY
 			film_count DESC
-		LIMIT 5;
-	`
+		LIMIT %d;
+	`, limit)
+
 	rows, err := db.Query(query)
 	if err != nil {
-		log.Println("Database query error in FetchTopFiveDirectors:", err)
+		log.Println("Database query error in FetchTopDirectors:", err)
 		return ChartData{}, err
 	}
 	defer rows.Close()
@@ -164,7 +166,7 @@ func FetchTopFiveDirectors() (ChartData, error) {
 		var directorName string
 		var count int
 		if err := rows.Scan(&directorName, &count); err != nil {
-			log.Println("Row scanning error in FetchTopFiveDirectors:", err)
+			log.Println("Row scanning error in FetchTopDirectors:", err)
 			return ChartData{}, err
 		}
 		directorNames = append(directorNames, directorName)
@@ -172,7 +174,7 @@ func FetchTopFiveDirectors() (ChartData, error) {
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Println("Rows iteration error in FetchTopFiveDirectors:", err)
+		log.Println("Rows iteration error in FetchTopDirectors:", err)
 		return ChartData{}, err
 	}
 
@@ -180,9 +182,8 @@ func FetchTopFiveDirectors() (ChartData, error) {
 		Labels: directorNames,
 		Datasets: []Dataset{
 			{
-				Label: "Top 5 Directors by Film Count",
+				Label: "Top Directors by Film Count",
 				Data:  filmCounts,
-				// You might want to add colors or other styling here for the chart
 			},
 		},
 	}
