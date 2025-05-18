@@ -7,121 +7,128 @@ import (
 	"path/filepath"
 )
 
+// Content types constants for consistency
+const (
+	contentTypeHTML = "text/html; charset=utf-8"
+	contentTypeCSS  = "text/css; charset=utf-8"
+	contentTypeJS   = "application/javascript; charset=utf-8"
+)
+
+// registerStaticAsset creates a handler for a specific static file.
+// - mux: The ServeMux to register the route with.
+// - urlRoute: The URL path for the asset (e.g., "/style.css").
+// - assetRelPath: The file path relative to the "static" directory (e.g., "css/style.css").
+// - contentType: The MIME type of the asset.
+func registerStaticAsset(mux *http.ServeMux, urlRoute string, assetRelPath string, contentType string) {
+	fullDiskPath := filepath.Join("static", assetRelPath)
+
+	mux.HandleFunc(urlRoute, func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Request: %s %s from %s for %s", r.Method, r.URL.Path, r.RemoteAddr, urlRoute)
+
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Check if file exists (maintains original logging behavior)
+		if _, err := os.Stat(fullDiskPath); os.IsNotExist(err) {
+			log.Printf("Static file not found: %s (disk path) for route %s", fullDiskPath, urlRoute)
+			http.NotFound(w, r)
+			return
+		}
+
+		if contentType != "" {
+			w.Header().Set("Content-Type", contentType)
+		}
+		http.ServeFile(w, r, fullDiskPath)
+	})
+}
+
+// registerAPIHandler registers an API endpoint and logs its registration.
+func registerAPIHandler(mux *http.ServeMux, path string, handler http.HandlerFunc) {
+	mux.HandleFunc(path, handler)
+	log.Printf("API endpoint registered: %s", path)
+}
+
+// logServerStartupInfo logs messages about server startup and accessible URLs.
+func logServerStartupInfo(port string, apiPaths []string) {
+	baseURL := "http://localhost:" + port
+	log.Printf("Server starting on port %s...", port)
+	log.Printf("Access the application at %s/", baseURL)
+	for _, apiPath := range apiPaths {
+		log.Printf("API available at: %s%s", baseURL, apiPath)
+	}
+}
+
 func main() {
-	// Initialize Database Connection (from api_handlers.go)
+	// Initialize Database Connection (assuming InitDB and db are defined elsewhere)
 	if err := InitDB(); err != nil {
 		log.Fatalf("FATAL: Failed to initialize database: %v. Server cannot start without DB.", err)
 	}
+	// Ensure db connection is closed if server fails to start or on shutdown (if db is accessible here)
+	// This defer might be better placed in InitDB or if db is returned by InitDB.
+	// For now, assuming the original structure for db.Close() in ListenAndServe error.
 
 	port := "3000"
 	mux := http.NewServeMux()
 
 	// --- Static File Handlers ---
+
+	// Root handler for index.html (special case)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
 		if r.Method != http.MethodGet {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		if r.URL.Path != "/" {
-			// Serve static files if path is not root, or 404
-			// This simple example only serves index.html at root.
-			// For a more general static file server, see http.FileServer.
+		if r.URL.Path == "/" { // Only serve index.html for the exact root path
+			htmlFilePath := filepath.Join("static", "index.html")
+			if _, err := os.Stat(htmlFilePath); os.IsNotExist(err) {
+				log.Printf("File not found: %s", htmlFilePath)
+				http.NotFound(w, r)
+				return
+			}
+			w.Header().Set("Content-Type", contentTypeHTML)
+			http.ServeFile(w, r, htmlFilePath)
+		} else {
+			// For any other path not explicitly handled by other routes, serve a 404.
 			http.NotFound(w, r)
-			return
 		}
-		htmlFilePath := filepath.Join("static", "index.html")
-		if _, err := os.Stat(htmlFilePath); os.IsNotExist(err) {
-			log.Printf("File not found: %s", htmlFilePath)
-			http.NotFound(w, r)
-			return
-		}
-		http.ServeFile(w, r, htmlFilePath)
 	})
 
-	mux.HandleFunc("/style.css", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		cssFilePath := filepath.Join("static", "css", "style.css")
-		serveStaticFile(w, r, cssFilePath, "text/css; charset=utf-8")
-	})
-
-	mux.HandleFunc("/MoviesByReleaseYearChart.js", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		jsFilePath := filepath.Join("static", "js", "charts", "MoviesByReleaseYearChart.js")
-		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
-	})
-
-	// Example: Add a route for a new JS chart file for genres
-	mux.HandleFunc("/MoviesByGenrePieChart.js", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		jsFilePath := filepath.Join("static", "js", "charts", "MoviesByGenrePieChart.js")
-		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
-	})
-
-	mux.HandleFunc("/TopDirectorsChart.js", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		jsFilePath := filepath.Join("static", "js", "charts", "TopDirectorsChart.js")
-		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
-	})
-
-	mux.HandleFunc("/TopActorsChart.js", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		jsFilePath := filepath.Join("static", "js", "charts", "TopActorsChart.js")
-		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
-	})
-
-	mux.HandleFunc("/ChartConfig.js", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		jsFilePath := filepath.Join("static", "js", "ChartConfig.js")
-		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
-	})
-
-	mux.HandleFunc("/fullscreenChart.js", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		jsFilePath := filepath.Join("static", "js", "fullscreenChart.js")
-		serveStaticFile(w, r, jsFilePath, "application/javascript; charset=utf-8")
-	})
+	// Register other static assets
+	registerStaticAsset(mux, "/style.css", "css/style.css", contentTypeCSS)
+	registerStaticAsset(mux, "/MoviesByReleaseYearChart.js", "js/charts/MoviesByReleaseYearChart.js", contentTypeJS)
+	registerStaticAsset(mux, "/MoviesByGenrePieChart.js", "js/charts/MoviesByGenrePieChart.js", contentTypeJS)
+	registerStaticAsset(mux, "/TopDirectorsChart.js", "js/charts/TopDirectorsChart.js", contentTypeJS)
+	registerStaticAsset(mux, "/TopActorsChart.js", "js/charts/TopActorsChart.js", contentTypeJS)
+	registerStaticAsset(mux, "/ChartConfig.js", "js/ChartConfig.js", contentTypeJS)
+	registerStaticAsset(mux, "/fullscreenChart.js", "js/fullscreenChart.js", contentTypeJS)
 
 	// --- API Endpoints ---
-	// Using /api/ prefix for API routes is a good practice
-	mux.HandleFunc("/api/film-count-by-release-year", filmCountByReleaseYearHandler)
-	mux.HandleFunc("/api/film-count-by-genre", filmCountByGenreHandler)
-	mux.HandleFunc("/api/top-directors", topDirectorsHandler)
-	mux.HandleFunc("/api/top-actors", topActorsHandler)
+	// (Assuming handler functions like filmCountByReleaseYearHandler are defined elsewhere)
+	apiPaths := []string{
+		"/api/film-count-by-release-year",
+		"/api/film-count-by-genre",
+		"/api/top-directors",
+		"/api/top-actors",
+	}
 
-	log.Printf("API endpoint /api/film-count-by-release-year registered.")
-	log.Printf("API endpoint /api/film-count-by-genre registered.")
-	log.Printf("API endpoint /api/top-directors registered.")
+	registerAPIHandler(mux, apiPaths[0], filmCountByReleaseYearHandler)
+	registerAPIHandler(mux, apiPaths[1], filmCountByGenreHandler)
+	registerAPIHandler(mux, apiPaths[2], topDirectorsHandler)
+	registerAPIHandler(mux, apiPaths[3], topActorsHandler)
 
-	log.Printf("Server starting on port %s...", port)
-	log.Printf("Access the application at http://localhost:%s/", port)
-	log.Printf("API data by year: http://localhost:%s/api/film-count-by-release-year", port)
-	log.Printf("API data by genre: http://localhost:%s/api/film-count-by-genre", port)
-	log.Printf("API data by top directors: http://localhost:%s/api/top-directors", port)
+	// --- Server Startup ---
+	logServerStartupInfo(port, apiPaths)
 
 	serverErr := http.ListenAndServe(":"+port, mux)
 	if serverErr != nil {
-		if db != nil { // db is the global variable from api_handlers.go
+		// Assuming 'db' is accessible (e.g., a global variable from api_handlers.go or db.go)
+		if db != nil {
 			log.Println("Closing database connection due to server error...")
 			db.Close()
 		}
 		log.Fatalf("Error starting server: %s\n", serverErr)
 	}
-}
-
-// Helper function to serve static files
-func serveStaticFile(w http.ResponseWriter, r *http.Request, filePath string, contentType string) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		log.Printf("Static file not found: %s", filePath)
-		http.NotFound(w, r)
-		return
-	}
-	if contentType != "" {
-		w.Header().Set("Content-Type", contentType)
-	}
-	http.ServeFile(w, r, filePath)
 }
