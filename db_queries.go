@@ -127,3 +127,64 @@ func FetchFilmCountsByGenre() (ChartData, error) {
 	}
 	return chartData, nil
 }
+
+// FetchTopFiveDirectors retrieves the top 5 directors by the number of films they directed.
+func FetchTopFiveDirectors() (ChartData, error) {
+	if db == nil {
+		log.Println("FetchTopFiveDirectors: Database connection is not initialized.")
+		return ChartData{}, sql.ErrConnDone // Or a more specific error
+	}
+
+	// Query to get the top 5 directors by film count
+	query := `
+		SELECT
+			director,
+			COUNT(*) as film_count
+		FROM
+			films  -- Assuming your table name is 'films'
+		WHERE
+			director IS NOT NULL AND director <> '' -- Filter out NULL or empty director names
+		GROUP BY
+			director
+		ORDER BY
+			film_count DESC
+		LIMIT 5;
+	`
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Println("Database query error in FetchTopFiveDirectors:", err)
+		return ChartData{}, err
+	}
+	defer rows.Close()
+
+	var directorNames []string
+	var filmCounts []int
+
+	for rows.Next() {
+		var directorName string
+		var count int
+		if err := rows.Scan(&directorName, &count); err != nil {
+			log.Println("Row scanning error in FetchTopFiveDirectors:", err)
+			return ChartData{}, err
+		}
+		directorNames = append(directorNames, directorName)
+		filmCounts = append(filmCounts, count)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println("Rows iteration error in FetchTopFiveDirectors:", err)
+		return ChartData{}, err
+	}
+
+	chartData := ChartData{
+		Labels: directorNames,
+		Datasets: []Dataset{
+			{
+				Label: "Top 5 Directors by Film Count",
+				Data:  filmCounts,
+				// You might want to add colors or other styling here for the chart
+			},
+		},
+	}
+	return chartData, nil
+}

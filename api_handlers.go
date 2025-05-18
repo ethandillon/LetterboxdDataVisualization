@@ -84,3 +84,17 @@ func filmCountByGenreHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("JSON encoding error for genre chart:", err)
 	}
 }
+
+func topFiveDirectorsHandler(w http.ResponseWriter, r *http.Request) {
+	chartData, err := FetchTopFiveDirectors() // Call function from db_queries.go
+	if err != nil {
+		http.Error(w, "Failed to fetch top 5 directors: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(chartData); err != nil {
+		http.Error(w, "Failed to encode JSON response: "+err.Error(), http.StatusInternalServerError)
+		log.Println("JSON encoding error for top 5 directors chart:", err)
+	}
+}
