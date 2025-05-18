@@ -10,8 +10,9 @@ body {
     box-sizing: border-box;
 }
 
-/* Bootstrap .container provides horizontal padding. Body padding might conflict. */
-/* If you need overall body padding, adjust accordingly or use Bootstrap's p- classes */
+body.fullscreen-active {
+    overflow: hidden;
+}
 
 .chart-container {
     /* width: 90%; */ /* Width will be handled by Bootstrap's .col-* classes */
