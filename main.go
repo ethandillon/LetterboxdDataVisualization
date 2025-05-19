@@ -42,6 +42,7 @@ func registerStaticAsset(mux *http.ServeMux, urlRoute string, assetRelPath strin
 		}
 		http.ServeFile(w, r, fullDiskPath)
 	})
+	log.Printf("Static asset registered: %s -> %s", urlRoute, fullDiskPath) // Added log for static asset registration
 }
 
 // registerAPIHandler registers an API endpoint and logs its registration.
@@ -61,15 +62,13 @@ func logServerStartupInfo(port string, apiPaths []string) {
 }
 
 func main() {
-	// Initialize Database Connection (assuming InitDB and db are defined elsewhere)
+	// Initialize Database Connection (assuming InitDB and db are defined elsewhere, typically api_handlers.go or a db.go)
 	if err := InitDB(); err != nil {
 		log.Fatalf("FATAL: Failed to initialize database: %v. Server cannot start without DB.", err)
 	}
-	// Ensure db connection is closed if server fails to start or on shutdown (if db is accessible here)
-	// This defer might be better placed in InitDB or if db is returned by InitDB.
-	// For now, assuming the original structure for db.Close() in ListenAndServe error.
+	// db.Close() will be handled in the server error block or via a defer if InitDB returns the db instance.
 
-	port := "3000"
+	port := "3000" // You can make this configurable via environment variable if needed
 	mux := http.NewServeMux()
 
 	// --- Static File Handlers ---
@@ -81,20 +80,29 @@ func main() {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		if r.URL.Path == "/" { // Only serve index.html for the exact root path
+		// Serve index.html only for the exact root path "/"
+		if r.URL.Path == "/" {
 			htmlFilePath := filepath.Join("static", "index.html")
+			// Check if index.html exists
 			if _, err := os.Stat(htmlFilePath); os.IsNotExist(err) {
-				log.Printf("File not found: %s", htmlFilePath)
+				log.Printf("File not found: %s (index.html)", htmlFilePath)
 				http.NotFound(w, r)
 				return
 			}
 			w.Header().Set("Content-Type", contentTypeHTML)
 			http.ServeFile(w, r, htmlFilePath)
 		} else {
-			// For any other path not explicitly handled by other routes, serve a 404.
-			http.NotFound(w, r)
+			// For any other path not explicitly handled, let other handlers try,
+			// or if no other handler matches, it will implicitly be a 404.
+			// We can explicitly serve 404 if we want to prevent any ambiguity
+			// but usually the ServeMux handles this if no other route matches.
+			// For clarity, if we want to ensure only defined static assets and API routes are served:
+			// http.NotFound(w, r) // This line would make any non-defined path a 404 immediately.
+			// However, typically we let other registered handlers attempt to match first.
+			// The current setup is fine; if no other handler matches, it will be a 404.
 		}
 	})
+	log.Printf("Root handler registered for / -> static/index.html")
 
 	// Register other static assets
 	registerStaticAsset(mux, "/style.css", "css/style.css", contentTypeCSS)
@@ -104,30 +112,42 @@ func main() {
 	registerStaticAsset(mux, "/TopActorsChart.js", "js/charts/TopActorsChart.js", contentTypeJS)
 	registerStaticAsset(mux, "/ChartConfig.js", "js/ChartConfig.js", contentTypeJS)
 	registerStaticAsset(mux, "/fullscreenChart.js", "js/fullscreenChart.js", contentTypeJS)
+	registerStaticAsset(mux, "/statsLoader.js", "js/statsLoader.js", contentTypeJS) // Added statsLoader.js
 
 	// --- API Endpoints ---
-	// (Assuming handler functions like filmCountByReleaseYearHandler are defined elsewhere)
+	// (Assuming handler functions like filmCountByReleaseYearHandler are defined in api_handlers.go)
 	apiPaths := []string{
 		"/api/film-count-by-release-year",
 		"/api/film-count-by-genre",
 		"/api/top-directors",
 		"/api/top-actors",
+		"/api/stats/total-watched", // New stat endpoint
+		"/api/stats/total-rated",   // New stat endpoint
+		"/api/stats/total-hours",   // New stat endpoint
+		"/api/stats/rewatches",     // New stat endpoint
 	}
 
 	registerAPIHandler(mux, apiPaths[0], filmCountByReleaseYearHandler)
 	registerAPIHandler(mux, apiPaths[1], filmCountByGenreHandler)
 	registerAPIHandler(mux, apiPaths[2], topDirectorsHandler)
 	registerAPIHandler(mux, apiPaths[3], topActorsHandler)
+	registerAPIHandler(mux, apiPaths[4], totalMoviesWatchedHandler) // New stat handler
+	registerAPIHandler(mux, apiPaths[5], totalMoviesRatedHandler)   // New stat handler
+	registerAPIHandler(mux, apiPaths[6], totalHoursWatchedHandler)  // New stat handler
+	registerAPIHandler(mux, apiPaths[7], rewatchStatsHandler)       // New stat handler
 
 	// --- Server Startup ---
 	logServerStartupInfo(port, apiPaths)
 
 	serverErr := http.ListenAndServe(":"+port, mux)
 	if serverErr != nil {
-		// Assuming 'db' is accessible (e.g., a global variable from api_handlers.go or db.go)
+		// Assuming 'db' is a global variable accessible here (e.g., from api_handlers.go or a db.go file in package main)
 		if db != nil {
 			log.Println("Closing database connection due to server error...")
-			db.Close()
+			err := db.Close()
+			if err != nil {
+				log.Printf("Error closing database connection: %v", err)
+			}
 		}
 		log.Fatalf("Error starting server: %s\n", serverErr)
 	}

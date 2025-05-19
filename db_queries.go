@@ -250,3 +250,93 @@ func FetchTopActors(limit int) (ChartData, error) {
 	}
 	return chartData, nil
 }
+
+// FetchTotalMoviesWatched queries the total number of films.
+func FetchTotalMoviesWatched() (StatCount, error) {
+	if db == nil {
+		log.Println("FetchTotalMoviesWatched: Database connection is not initialized.")
+		return StatCount{}, sql.ErrConnDone
+	}
+
+	var count int64
+	query := `
+	SELECT COUNT(*) FROM films;
+	`
+	err := db.QueryRow(query).Scan(&count)
+	if err != nil {
+		log.Println("Database query error in FetchTotalMoviesWatched:", err)
+		return StatCount{}, err
+	}
+	return StatCount{Count: count}, nil
+}
+
+// FetchTotalMoviesRated queries the total number of films that have a rating.
+func FetchTotalMoviesRated() (StatCount, error) {
+	if db == nil {
+		log.Println("FetchTotalMoviesRated: Database connection is not initialized.")
+		return StatCount{}, sql.ErrConnDone
+	}
+
+	var count int64
+	// Assuming 'rating' column exists and is NULL if not rated.
+	query := `
+	SELECT COUNT(*) FROM ratings_entries WHERE rating IS NOT NULL;
+	`
+	err := db.QueryRow(query).Scan(&count)
+	if err != nil {
+		log.Println("Database query error in FetchTotalMoviesRated:", err)
+		return StatCount{}, err
+	}
+	return StatCount{Count: count}, nil
+}
+
+// FetchTotalHoursWatched queries the total runtime of all films and converts it to hours.
+func FetchTotalHoursWatched() (HoursWatchedStat, error) {
+	if db == nil {
+		log.Println("FetchTotalHoursWatched: Database connection is not initialized.")
+		return HoursWatchedStat{}, sql.ErrConnDone
+	}
+
+	var totalMinutes sql.NullInt64 // Use sql.NullInt64 to handle potential NULL sum
+	// Assuming 'runtime' column stores duration in minutes.
+	// COALESCE ensures 0 is returned if no films or all runtimes are NULL.
+	query := `
+	SELECT COALESCE(SUM(runtime), 0) FROM films WHERE runtime IS NOT NULL;
+	`
+	err := db.QueryRow(query).Scan(&totalMinutes)
+	if err != nil {
+		log.Println("Database query error in FetchTotalHoursWatched:", err)
+		return HoursWatchedStat{}, err
+	}
+
+	hours := 0.0
+	if totalMinutes.Valid {
+		hours = float64(totalMinutes.Int64) / 60.0
+	}
+
+	return HoursWatchedStat{TotalHours: hours}, nil
+}
+
+// FetchRewatchStats queries the number of rewatched films vs new watches.
+func FetchRewatchStats() (RewatchStatsData, error) {
+	if db == nil {
+		log.Println("FetchRewatchStats: Database connection is not initialized.")
+		return RewatchStatsData{}, sql.ErrConnDone
+	}
+
+	var rewatches, newWatches int64
+	// Assuming 'is_rewatch' is a BOOLEAN column.
+	// Films with is_rewatch = FALSE or IS NULL are considered new watches.
+	query := `
+		SELECT
+			COALESCE(SUM(CASE WHEN rewatch = TRUE THEN 1 ELSE 0 END), 0) as rewatches,
+			COALESCE(SUM(CASE WHEN rewatch = FALSE OR rewatch IS NULL THEN 1 ELSE 0 END), 0) as new_watches
+		FROM diary_entries;
+	`
+	err := db.QueryRow(query).Scan(&rewatches, &newWatches)
+	if err != nil {
+		log.Println("Database query error in FetchRewatchStats:", err)
+		return RewatchStatsData{}, err
+	}
+	return RewatchStatsData{Rewatches: rewatches, NewWatches: newWatches}, nil
+}

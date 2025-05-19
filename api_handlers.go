@@ -140,3 +140,43 @@ func topActorsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("JSON encoding error for top 5 Actors chart:", err)
 	}
 }
+
+func totalMoviesWatchedHandler(w http.ResponseWriter, r *http.Request) {
+	stats, err := FetchTotalMoviesWatched()
+	if err != nil {
+		http.Error(w, "Failed to fetch total movies watched: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+}
+
+func totalMoviesRatedHandler(w http.ResponseWriter, r *http.Request) {
+	stats, err := FetchTotalMoviesRated()
+	if err != nil {
+		http.Error(w, "Failed to fetch total movies rated: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+}
+
+func totalHoursWatchedHandler(w http.ResponseWriter, r *http.Request) {
+	stats, err := FetchTotalHoursWatched()
+	if err != nil {
+		http.Error(w, "Failed to fetch total hours watched: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+}
+
+func rewatchStatsHandler(w http.ResponseWriter, r *http.Request) {
+	stats, err := FetchRewatchStats()
+	if err != nil {
+		http.Error(w, "Failed to fetch rewatch stats: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+}

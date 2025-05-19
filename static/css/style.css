@@ -38,6 +38,7 @@ body.fullscreen-active {
 }
 
 
+
 h1 {
     width: 100%;
     text-align: center;
@@ -72,6 +73,68 @@ a:visted{
 
 .hidden {
     display: none !important;
+}
+
+.stat-box {
+    background-color: #1f2937; /* Same as chart-container */
+    padding: 20px 25px; /* Added more horizontal padding */
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%; /* Ensures all boxes in a row have same height if using d-flex on parent row */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.stat-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.5);
+}
+
+.stat-box-content {
+    flex-grow: 1;
+}
+
+.stat-box-title {
+    font-size: 0.8rem; /* Slightly smaller title */
+    color: #9ca3af; /* Lighter gray for title */
+    margin-bottom: 6px; /* Adjusted margin */
+    font-weight: 600;
+    text-transform: uppercase; /* As per Bootstrap example */
+    letter-spacing: 0.5px;
+}
+
+.stat-box-value {
+    font-size: 2rem; /* Larger value */
+    font-weight: 700;
+    color: #f3f4f6; /* White text for value */
+    margin-bottom: 0px; /* Reduced margin */
+    line-height: 1.2;
+}
+
+.stat-box-subtext {
+    font-size: 0.75rem;
+    color: #6b7280; /* Darker gray for subtext */
+    margin-top: 4px;
+}
+
+.stat-box-subtext.positive {
+    color: #10b981; /* Green */
+}
+.stat-box-subtext.negative {
+    color: #ef4444; /* Red */
+}
+
+.stat-box-icon {
+    padding-left: 20px; /* Space between content and icon */
+}
+
+.stat-box-icon svg {
+    width: 36px; /* Icon size */
+    height: 36px;
+    stroke: #4b5563; /* Icon color, can be changed to match subtext or a theme color */
+    opacity: 0.7;
 }
 
 /* --- Fullscreen Button Styles --- */
