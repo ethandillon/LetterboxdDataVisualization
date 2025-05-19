@@ -52,14 +52,14 @@ async function renderTopDirectorsChart() {
                 scales: {
                     x: {
                         title: {
-                            display: true,
+                            display: false,
                             text: 'Director'
                         }
                     },
                     y: {
                         title: {
-                            display: true,
-                            text: 'Number of Films Directed'
+                            display: false,
+                            text: 'Number of Films'
                         },
                         beginAtZero: true,
                         ticks: {

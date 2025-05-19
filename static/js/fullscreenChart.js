@@ -21,6 +21,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Deep clone original options to modify them safely for fullscreen
         let optionsForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.options));
 
+        optionsForFullscreen.scales = optionsForFullscreen.scales || {};
+        optionsForFullscreen.scales.x = optionsForFullscreen.scales.x || {};
+        optionsForFullscreen.scales.x.title = optionsForFullscreen.scales.x.title || {}; 
+        optionsForFullscreen.scales.x.title.display = optionsForFullscreen.scales.x.title.display || {}; 
+
+        optionsForFullscreen.scales = optionsForFullscreen.scales || {};
+        optionsForFullscreen.scales.y = optionsForFullscreen.scales.y || {};
+        optionsForFullscreen.scales.y.title = optionsForFullscreen.scales.y.title || {}; 
+        optionsForFullscreen.scales.y.title.display = optionsForFullscreen.scales.y.title.display || {}; 
+
         if (chartId === 'TopDirectorsChart') {
             try {
                 // Fetch the top 25 directors data specifically for fullscreen
@@ -32,14 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
                 } else {
                     dataForFullscreen = await response.json();
-                    // Update titles in options for the fullscreen view (Top 25)
-                    if (optionsForFullscreen.scales?.x?.title) {
-                        optionsForFullscreen.scales.x.title.text = 'Director (Top 25)';
-                    }
                     if (optionsForFullscreen.plugins?.title) {
                         optionsForFullscreen.plugins.title.text = 'Top 25 Directors by Film Count';
                     }
                 }
+                optionsForFullscreen.scales.y.ticks.display = true; // << SHOW X-AXIS LABELS IN FULLSCREEN
+                optionsForFullscreen.scales.x.ticks.display = true; // << SHOW X-AXIS LABELS IN FULLSCREEN
             } catch (fetchError) {
                 console.error('Error fetching top 25 directors data:', fetchError);
                 // Fallback to original chart data on fetch error
@@ -56,14 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
                 } else {
                     dataForFullscreen = await response.json();
-                    // Update titles in options for the fullscreen view (Top 25)
-                    if (optionsForFullscreen.scales?.x?.title) {
-                        optionsForFullscreen.scales.x.title.text = 'Actor (Top 25)';
-                    }
                     if (optionsForFullscreen.plugins?.title) {
                         optionsForFullscreen.plugins.title.text = 'Top 25 Actors by Film Count';
                     }
                 }
+                optionsForFullscreen.scales.y.ticks.display = true; // << SHOW Y-AXIS LABELS IN FULLSCREEN
+                optionsForFullscreen.scales.x.ticks.display = true; // << SHOW X-AXIS LABELS IN FULLSCREEN
             } catch (fetchError) {
                 console.error('Error fetching top 25 actors data:', fetchError);
                 // Fallback to original chart data on fetch error

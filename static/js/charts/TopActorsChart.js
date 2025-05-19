@@ -52,13 +52,13 @@ async function renderTopActorsChart() {
                 scales: {
                     x: {
                         title: {
-                            display: true,
+                            display: false,
                             text: 'Actor'
                         }
                     },
                     y: {
                         title: {
-                            display: true,
+                            display: false,
                             text: 'Number of Films'
                         },
                         beginAtZero: true,
