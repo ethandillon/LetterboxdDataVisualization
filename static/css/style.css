@@ -1,7 +1,7 @@
 /* Custom styles for better presentation - Dark Mode */
 body {
     font-family: 'Inter', sans-serif;
-    min-height: 100vh;
+    max-height: 100vh;
     background-color: #111827 !important;
     color: #f3f4f6;
     margin: 0;
@@ -41,9 +41,25 @@ body.fullscreen-active {
 h1 {
     width: 100%;
     text-align: center;
-    margin-bottom: 1.5rem;
+    margin-top: 1.5rem;
 }
 
+h2 {
+    text-align: center;
+    color:gray;
+    font-size: medium;
+}
+
+a:link {
+    color: gray;
+    background-color: transparent;
+    text-decoration: none;
+}
+
+a:visted{
+    color:gray;
+    background-color: transparent;
+}
 
 .error-message {
     color: #fca5a5;
