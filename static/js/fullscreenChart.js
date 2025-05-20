@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentFullscreenTargetId = targetId;
 
         if (type === 'chart') {
-            // ... (Keep existing chart logic as is - OMITTED FOR BREVITY) ...
+            // ... (Keep existing chart logic as is - OMITTED FOR BREVITY, NO CHANGES HERE) ...
             const originalChartInstance = Chart.getChart(targetId); 
 
             if (!originalChartInstance) {
@@ -143,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
             fullscreenChartInstance = new Chart(ctx, chartConfig);
             fullscreenCanvasContainer.classList.remove('hidden');
 
-
         } else if (type === 'generic') {
             fullscreenGenericContentHost.innerHTML = ''; 
 
@@ -163,14 +162,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 gridWrapper.appendChild(fullscreenMovieGrid);
                 
                 window.MyAppGlobal.fetchAndDisplayMostRewatched(
-                    14, // Fetch top 14 movies
+                    14, 
                     fullscreenMovieGrid, 
-                    'w185' // Use 'w185' posters, they will scale to fit the card width
+                    'w342' // CHANGED: Use a larger poster size like 'w342' or 'w500'
                 );
                 fullscreenGenericContentHost.classList.remove('hidden');
 
             } else {
-                // ... (Fallback for other generic content) ...
+                // ... (Fallback for other generic content - OMITTED FOR BREVITY, NO CHANGES HERE) ...
                 const originalContentElement = document.getElementById(targetId);
                 if (originalContentElement) {
                     const contentWrapper = document.createElement('div');
@@ -200,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function exitFullscreen() {
-        // ... (rest of exitFullscreen remains the same - OMITTED FOR BREVITY) ...
+        // ... (rest of exitFullscreen remains the same - OMITTED FOR BREVITY, NO CHANGES HERE) ...
         if (currentFullscreenType === 'chart' && fullscreenChartInstance) {
             fullscreenChartInstance.destroy();
             fullscreenChartInstance = null;
@@ -219,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentFullscreenTargetId = null;
     }
 
-    // ... (event listeners remain the same - OMITTED FOR BREVITY) ...
+    // ... (event listeners remain the same - OMITTED FOR BREVITY, NO CHANGES HERE) ...
     fullscreenBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             enterFullscreen(btn); 
