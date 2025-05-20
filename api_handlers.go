@@ -206,3 +206,17 @@ func mostRewatchedMoviesHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("JSON encoding error for most rewatched movies:", err)
 	}
 }
+
+func filmCountByWatchDateHandler(w http.ResponseWriter, r *http.Request) {
+	chartData, err := FetchFilmCountsByWatchDate() // Call function from db_queries.go
+	if err != nil {
+		http.Error(w, "Failed to fetch film counts by watch date: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(chartData); err != nil {
+		http.Error(w, "Failed to encode JSON response: "+err.Error(), http.StatusInternalServerError)
+		log.Println("JSON encoding error for year chart:", err)
+	}
+}

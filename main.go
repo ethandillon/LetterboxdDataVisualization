@@ -114,6 +114,7 @@ func main() {
 	registerStaticAsset(mux, "/fullscreenChart.js", "js/fullscreenChart.js", contentTypeJS)
 	registerStaticAsset(mux, "/statsLoader.js", "js/statsLoader.js", contentTypeJS) // Added statsLoader.js
 	registerStaticAsset(mux, "/mostRewatchedMovies.js", "js/charts/mostRewatchedMovies.js", contentTypeJS)
+	registerStaticAsset(mux, "/MoviesWatchedOverTimeChart.js", "js/charts/MoviesWatchedOverTimeChart.js", contentTypeJS)
 
 	// --- API Endpoints ---
 	// (Assuming handler functions like filmCountByReleaseYearHandler are defined in api_handlers.go)
@@ -126,7 +127,8 @@ func main() {
 		"/api/stats/total-rated",
 		"/api/stats/total-hours",
 		"/api/stats/rewatches",
-		"/api/most-rewatched-movies", // New API endpoint
+		"/api/most-rewatched-movies",
+		"/api/film-count-by-month",
 	}
 
 	registerAPIHandler(mux, apiPaths[0], filmCountByReleaseYearHandler)
@@ -137,7 +139,8 @@ func main() {
 	registerAPIHandler(mux, apiPaths[5], totalMoviesRatedHandler)
 	registerAPIHandler(mux, apiPaths[6], totalHoursWatchedHandler)
 	registerAPIHandler(mux, apiPaths[7], rewatchStatsHandler)
-	registerAPIHandler(mux, apiPaths[8], mostRewatchedMoviesHandler) // Register new handler
+	registerAPIHandler(mux, apiPaths[8], mostRewatchedMoviesHandler)
+	registerAPIHandler(mux, apiPaths[9], filmCountByWatchDateHandler)
 
 	// --- Server Startup ---
 	logServerStartupInfo(port, apiPaths)

@@ -120,6 +120,14 @@
                     <div id="mostRewatchedMoviesError" class="error-message hidden mt-2"></div>
                 </div>
             </div>
+            <!-- Chart: Movies Watched Over Time Chart -->
+            <div class="col-md-3 d-flex flex-column">
+                <div class="chart-container bar-chart-container">
+                    <button class="fullscreen-btn" data-target-id="MoviesWatchedOverTimeChart" data-type="chart" aria-label="Toggle fullscreen for Release Year chart">↗</button>
+                    <canvas id="MoviesWatchedOverTimeChart"></canvas>
+                </div>
+                <div id="MoviesWatchedOverTimeChartErrorMessage" class="error-message hidden mt-2"></div>
+            </div>
             <!-- Add other content to this row if needed, e.g., another col-lg-6 -->
         </div>
 
@@ -144,6 +152,8 @@
     <script src="/fullscreenChart.js" defer></script>
     <script src="/statsLoader.js" defer></script>
     <script src="/mostRewatchedMovies.js" defer></script>
+    <script src="/MoviesWatchedOverTimeChart.js" defer></script>
+
 
 </body>
 </html>
