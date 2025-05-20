@@ -25,11 +25,11 @@ body.fullscreen-active {
 }
 
 .bar-chart-container {
-    height: 30vh;
+    height: 20vh;
 }
 
 .pie-chart-container {
-    height: 30vh;
+    height: 20vh;
 }
 
 .chart-container canvas {
@@ -42,12 +42,18 @@ h1 {
     width: 100%;
     text-align: center;
     margin-top: 1.5rem;
+    font-weight: bold;
 }
 
 h2 {
     text-align: center;
     color:gray;
     font-size: medium;
+}
+
+a {
+    color: white;
+    text-decoration: none;
 }
 
 a:link {
