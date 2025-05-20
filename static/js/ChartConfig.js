@@ -31,14 +31,38 @@ MyAppCharts.colors = {
 
 // Define a new color palette for Pie/Doughnut charts
 MyAppCharts.pieColors = [
-    '#3b82f6', '#60a5fa', // Blue shades
-    '#ec4899', '#f472b6', // Pink shades
-    '#14b8a6', '#2dd4bf', // Teal shades
-    '#f97316', '#fb923c', // Orange shades
-    '#8b5cf6', '#a78bfa', // Violet shades
-    '#eab308', '#fde047', // Yellow shades
-    '#22c55e', '#4ade80', // Green shades
-    '#6b7280', '#9ca3af'  // Gray shades
+    // --- Primary Blue to Green Sequence ---
+
+    // Blues (Variations)
+    'rgb(29, 78, 216)',  
+    'rgb(59, 130, 246)',
+    'rgb(96, 165, 250)', 
+    'rgb(14, 165, 233)',
+
+    // Transition Colors (Cyan / Teal)
+    'rgb(126, 229, 247)',    
+    'rgb(42, 226, 205)',   
+    'rgb(45, 212, 191)',   
+
+    // Greens (Variations)
+    'rgb(16, 185, 129)', 
+    'rgb(34, 197, 94)',  
+    'rgb(74, 222, 128)', 
+    'rgb(21, 128, 61)',  
+
+    // --- Secondary/Accent Colors (if more slices are needed or for contrast) ---
+    // These are chosen to be harmonious or provide gentle contrast.
+    'rgb(0, 70, 17)', 
+    'rgb(4, 56, 13)',  
+    
+    'rgb(100, 116, 139)',
+    'rgb(148, 163, 184)', 
+
+    'rgb(204, 204, 204)',
+    'rgb(170, 170, 170)', 
+
+    'rgb(235, 235, 235)',
+    'rgb(255, 255, 255)',
 ];
 
 
