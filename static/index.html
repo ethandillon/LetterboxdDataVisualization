@@ -11,7 +11,7 @@
     <script src="/ChartConfig.js"></script>
 </head>
 <body>
-    <h1>My Movie Data</h1>
+    <h1>Frame by Frame</h1>
     <h2><a href="https://letterboxd.com/ChillinDillon3/" target="_blank">ChillinDillon3</a></h2>
     
     <div class="container-fluid mt-4 mb-4">
@@ -69,11 +69,11 @@
         </div>
 
         <!-- Existing Chart Row -->
-        <div class="row g-4 d-flex align-items-stretch">
+        <div class="row g-4 d-flex align-items-stretch mb-4">
             <!-- Chart 1: Release Year -->
             <div class="col-md-6 d-flex flex-column">
                 <div class="chart-container bar-chart-container">
-                    <button class="fullscreen-btn" data-chart-id="MoviesByReleaseYearChart" aria-label="Toggle fullscreen for Release Year chart">↗</button>
+                    <button class="fullscreen-btn" data-target-id="MoviesByReleaseYearChart" data-type="chart" aria-label="Toggle fullscreen for Release Year chart">↗</button>
                     <canvas id="MoviesByReleaseYearChart"></canvas>
                 </div>
                 <div id="ReleaseYearChartErrorMessage" class="error-message hidden mt-2"></div>
@@ -82,7 +82,7 @@
             <!-- Chart 2: Genre Pie -->
             <div class="col-md-3 d-flex flex-column">
                 <div class="chart-container pie-chart-container">
-                    <button class="fullscreen-btn" data-chart-id="MoviesByGenrePieChart" aria-label="Toggle fullscreen for Genre chart">↗</button>
+                    <button class="fullscreen-btn" data-target-id="MoviesByGenrePieChart" data-type="chart" aria-label="Toggle fullscreen for Genre chart">↗</button>
                     <canvas id="MoviesByGenrePieChart"></canvas>
                 </div>
                 <div id="GenreChartErrorMessage" class="error-message hidden mt-2"></div>
@@ -92,27 +92,48 @@
             <div class="col-md-3 d-flex flex-column">
                 <!-- Chart 3: Top Directors -->
                 <div class="chart-container bar-chart-container mb-4">
-                    <button class="fullscreen-btn" data-chart-id="TopDirectorsChart" aria-label="Toggle fullscreen for Top Directors chart">↗</button>
+                    <button class="fullscreen-btn" data-target-id="TopDirectorsChart" data-type="chart" aria-label="Toggle fullscreen for Top Directors chart">↗</button>
                     <canvas id="TopDirectorsChart"></canvas>
                 </div>
                 <div id="TopDirectorsChartErrorMessage" class="error-message hidden mt-2 mb-2"></div>
 
                 <!-- Chart 4: Top Actors -->
                 <div class="chart-container bar-chart-container">
-                    <button class="fullscreen-btn" data-chart-id="TopActorsChart" aria-label="Toggle fullscreen for Top Actors chart">↗</button>
+                    <button class="fullscreen-btn" data-target-id="TopActorsChart" data-type="chart" aria-label="Toggle fullscreen for Top Actors chart">↗</button>
                     <canvas id="TopActorsChart"></canvas>
                 </div>
                 <div id="TopActorsChartErrorMessage" class="error-message hidden mt-2"></div>
             </div>
         </div>
+
+        <!-- Most Rewatched Movies Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-lg-6"> <!-- Takes full width on smaller screens, half on large -->
+                <div class="movie-list-container"> 
+                    <button class="fullscreen-btn" data-target-id="mostRewatchedMoviesContainer" data-type="generic" aria-label="Toggle fullscreen for Most Rewatched Movies">↗</button>
+                    <div class="movie-list-header">
+                        <h3>Most Rewatched Movies</h3>
+                    </div>
+                    <div id="mostRewatchedMoviesContainer" class="rewatched-movies-grid">
+                        <!-- Movie cards will be injected here by JavaScript -->
+                    </div>
+                    <div id="mostRewatchedMoviesError" class="error-message hidden mt-2"></div>
+                </div>
+            </div>
+            <!-- Add other content to this row if needed, e.g., another col-lg-6 -->
+        </div>
+
     </div>
 
     <!-- Fullscreen Overlay and Container -->
     <div id="fullscreenOverlay" class="fullscreen-overlay hidden"></div>
     <div id="fullscreenChartHost" class="fullscreen-chart-host hidden">
         <button id="closeFullscreenBtn" class="close-fullscreen-btn" aria-label="Close fullscreen view">×</button>
-        <div class="fullscreen-canvas-container">
+        <div class="fullscreen-canvas-container hidden"> 
             <canvas id="fullscreenCanvas"></canvas>
+        </div>
+        <div id="fullscreenGenericContentHost" class="fullscreen-generic-content-container hidden"> 
+            <!-- Cloned generic content will go here -->
         </div>
     </div>
 
@@ -121,6 +142,8 @@
     <script src="/TopDirectorsChart.js" defer></script>
     <script src="/TopActorsChart.js" defer></script>
     <script src="/fullscreenChart.js" defer></script>
-    <script src="/statsLoader.js" defer></script> <!-- Add this line -->
+    <script src="/statsLoader.js" defer></script>
+    <script src="/mostRewatchedMovies.js" defer></script>
+
 </body>
 </html>

@@ -31,3 +31,10 @@ type RewatchStatsData struct {
 	Rewatches  int64 `json:"rewatches"`
 	NewWatches int64 `json:"new_watches"`
 }
+
+type RewatchedMovieData struct {
+	FilmID       int    `json:"film_id"`
+	Title        string `json:"title"`
+	PosterPath   string `json:"poster_path"`
+	RewatchCount int    `json:"rewatch_count"`
+}

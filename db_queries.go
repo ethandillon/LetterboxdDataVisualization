@@ -340,3 +340,61 @@ func FetchRewatchStats() (RewatchStatsData, error) {
 	}
 	return RewatchStatsData{Rewatches: rewatches, NewWatches: newWatches}, nil
 }
+
+// FetchMostRewatchedMovies queries the database for movies with the highest rewatch counts.
+func FetchMostRewatchedMovies(limit int) ([]RewatchedMovieData, error) {
+	if db == nil {
+		log.Println("FetchMostRewatchedMovies: Database connection is not initialized.")
+		return nil, sql.ErrConnDone
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			f.id AS film_id,
+			f.title,
+			f.poster_path,
+			COUNT(de.id) AS rewatch_count
+		FROM
+			films f
+		JOIN
+			diary_entries de ON f.id = de.film_id
+		WHERE
+			de.rewatch = TRUE
+		GROUP BY
+			f.id, f.title, f.poster_path
+		ORDER BY
+			rewatch_count DESC, f.title ASC
+		LIMIT %d;
+	`, limit)
+
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("Database query error in FetchMostRewatchedMovies (limit %d): %v", limit, err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var movies []RewatchedMovieData
+	for rows.Next() {
+		var movie RewatchedMovieData
+		// Ensure poster_path can be NULL in the DB and handle it
+		var posterPath sql.NullString
+		if err := rows.Scan(&movie.FilmID, &movie.Title, &posterPath, &movie.RewatchCount); err != nil {
+			log.Println("Row scanning error in FetchMostRewatchedMovies:", err)
+			return nil, err
+		}
+		if posterPath.Valid {
+			movie.PosterPath = posterPath.String
+		} else {
+			movie.PosterPath = "" // Or a placeholder path
+		}
+		movies = append(movies, movie)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println("Rows iteration error in FetchMostRewatchedMovies:", err)
+		return nil, err
+	}
+
+	return movies, nil
+}

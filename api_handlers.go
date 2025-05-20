@@ -180,3 +180,29 @@ func rewatchStatsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(stats)
 }
+
+func mostRewatchedMoviesHandler(w http.ResponseWriter, r *http.Request) {
+	limitStr := r.URL.Query().Get("limit")
+	limit := 5 // Default limit for dashboard view
+
+	if limitStr != "" {
+		parsedLimit, err := strconv.Atoi(limitStr)
+		if err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		} else {
+			log.Printf("Invalid limit parameter for most rewatched: '%s'. Using default %d.", limitStr, limit)
+		}
+	}
+
+	movies, err := FetchMostRewatchedMovies(limit)
+	if err != nil {
+		http.Error(w, "Failed to fetch most rewatched movies: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(movies); err != nil {
+		http.Error(w, "Failed to encode JSON response for most rewatched movies: "+err.Error(), http.StatusInternalServerError)
+		log.Println("JSON encoding error for most rewatched movies:", err)
+	}
+}

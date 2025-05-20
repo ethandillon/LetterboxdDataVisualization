@@ -12,19 +12,20 @@ body.fullscreen-active {
     overflow: hidden;
 }
 
-.chart-container {
+.chart-container,
+.movie-list-container { /* Added .movie-list-container here */
     background-color: #1f2937;
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
-    position: relative;
+    position: relative; /* Important for absolute positioned children like .fullscreen-btn */
     display: flex;
     flex-direction: column;
-    flex-grow: 1; /* Allow chart container to grow if column is stretched */
+    flex-grow: 1; /* Allow container to grow if column is stretched */
 }
 
 .bar-chart-container {
-    height: 30vh; 
+    height: 30vh;
 }
 
 .pie-chart-container {
@@ -36,8 +37,6 @@ body.fullscreen-active {
     width: 100% !important;
     height: 100% !important;
 }
-
-
 
 h1 {
     width: 100%;
@@ -137,6 +136,88 @@ a:visted{
     opacity: 0.7;
 }
 
+/* Styles for movie list header (inside .movie-list-container) */
+.movie-list-header {
+    display: flex;
+    justify-content: center; 
+    align-items: center;
+    margin-bottom: 15px; 
+}
+
+.movie-list-header h3 {
+    margin: 0; 
+    color: #e5e7eb; 
+    font-size: 1.2rem; 
+    font-weight: 600;
+}
+
+/* Styles for the movie grid itself (NORMAL VIEW) */
+.rewatched-movies-grid {
+    display: grid;
+    gap: 15px; 
+    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); 
+    justify-content: center; 
+    justify-items: center;   
+}
+
+.movie-card { /* NORMAL VIEW card styles */
+    background-color: #2d3748; 
+    border-radius: 8px;
+    overflow: hidden; 
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    transition: transform 0.2s ease-in-out;
+    width: 100%; 
+    max-width: 200px; /* Max width for cards in normal dashboard view */
+}
+.movie-card:hover {
+    transform: translateY(-2px);
+}
+
+.movie-card .poster { 
+    width: 100%;
+    height: auto; 
+    display: block; 
+    /* Apply border-radius to .movie-card itself to clip poster */
+}
+
+.movie-card .poster-placeholder {
+    aspect-ratio: 2 / 3; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #4a5568;
+    color: #a0aec0;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    width: 100%; 
+}
+
+.movie-card .rewatch-info {
+    padding: 10px 8px; 
+    background-color: #2d3748; 
+    border-top: 1px solid #4a5568; 
+}
+
+.movie-card .rewatch-count {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin: 0;
+}
+
+.movie-card .movie-title-tooltip { 
+    font-size: 0.75rem;
+    color: #a0aec0;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%; 
+}
+
 /* --- Fullscreen Button Styles --- */
 .fullscreen-btn {
     position: absolute;
@@ -159,7 +240,8 @@ a:visted{
     transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out, transform 0.2s ease-in-out, background-color 0.2s ease;
 }
 
-.chart-container:hover .fullscreen-btn {
+.chart-container:hover .fullscreen-btn,
+.movie-list-container:hover .fullscreen-btn { 
     opacity: 1;
     visibility: visible;
     transform: scale(1) translate(0, 0);
@@ -189,7 +271,7 @@ a:visted{
     width: 90vw;
     height: 90vh;
     background-color: #1f2937;
-    padding: 20px;
+    padding: 20px; 
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     z-index: 1000;
@@ -219,15 +301,63 @@ a:visted{
     background-color: rgba(55, 65, 81, 0.9);
 }
 
-.fullscreen-canvas-container {
+.fullscreen-canvas-container,
+.fullscreen-generic-content-container { 
     flex-grow: 1;
     width: 100%;
-    height: 100%;
-    position: relative; /* Changed from absolute to relative if not strictly needed for absolute children */
+    height:100%;
+    position: relative;
+    /* overflow-y is handled by child wrapper if needed */
+    display:flex;
+    flex-direction: column;
 }
 
 #fullscreenCanvas {
     display: block;
     width: 100% !important;
     height: 100% !important;
+}
+
+/* Wrapper for generic content in fullscreen (contains header + scrollable grid area) */
+.fullscreen-generic-header {
+    text-align: center;
+    color: #e5e7eb;
+    font-size: 1.5rem; 
+    font-weight: 600;
+    padding: 15px 0; 
+    flex-shrink: 0; 
+}
+
+.fullscreen-generic-content-container .fullscreen-cloned-content-wrapper {
+    padding: 10px; /* Padding around the grid area */
+    flex-grow: 1;
+    /* overflow-y: auto; Allows scrolling for the grid area if content exceeds height */
+    min-height: 0; /* Important for flex children that need to scroll */
+}
+
+
+/* Specific styles for the rewatched movies grid when in FULLSCREEN */
+.fullscreen-generic-content-container .fullscreen-cloned-content-wrapper .rewatched-movies-grid {
+    display: grid; 
+    grid-template-columns: repeat(7, 1fr); /* Exactly 7 columns */
+    gap: 10px; /* Adjust gap as needed */
+    align-items: start; /* Align items if text below poster varies height */
+}
+
+/* Movie card styling within FULLSCREEN */
+.fullscreen-generic-content-container .movie-card {
+    max-width: none; /* Remove max-width from normal view */
+    width: 100%;     /* Ensure card fills its 1fr column */
+    /* Inherits .movie-card styles like background, border-radius, etc.
+       Override here if specific fullscreen appearance is needed */
+}
+
+/* Poster within fullscreen card */
+.fullscreen-generic-content-container .movie-card .poster {
+    /* width: 100%; height: auto; is already general style */
+}
+
+/* Rewatch info within fullscreen card */
+.fullscreen-generic-content-container .movie-card .rewatch-info {
+    /* Styles can be inherited or specifically adjusted for fullscreen, e.g., font-size */
 }

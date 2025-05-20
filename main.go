@@ -113,6 +113,7 @@ func main() {
 	registerStaticAsset(mux, "/ChartConfig.js", "js/ChartConfig.js", contentTypeJS)
 	registerStaticAsset(mux, "/fullscreenChart.js", "js/fullscreenChart.js", contentTypeJS)
 	registerStaticAsset(mux, "/statsLoader.js", "js/statsLoader.js", contentTypeJS) // Added statsLoader.js
+	registerStaticAsset(mux, "/mostRewatchedMovies.js", "js/charts/mostRewatchedMovies.js", contentTypeJS)
 
 	// --- API Endpoints ---
 	// (Assuming handler functions like filmCountByReleaseYearHandler are defined in api_handlers.go)
@@ -121,20 +122,22 @@ func main() {
 		"/api/film-count-by-genre",
 		"/api/top-directors",
 		"/api/top-actors",
-		"/api/stats/total-watched", // New stat endpoint
-		"/api/stats/total-rated",   // New stat endpoint
-		"/api/stats/total-hours",   // New stat endpoint
-		"/api/stats/rewatches",     // New stat endpoint
+		"/api/stats/total-watched",
+		"/api/stats/total-rated",
+		"/api/stats/total-hours",
+		"/api/stats/rewatches",
+		"/api/most-rewatched-movies", // New API endpoint
 	}
 
 	registerAPIHandler(mux, apiPaths[0], filmCountByReleaseYearHandler)
 	registerAPIHandler(mux, apiPaths[1], filmCountByGenreHandler)
 	registerAPIHandler(mux, apiPaths[2], topDirectorsHandler)
 	registerAPIHandler(mux, apiPaths[3], topActorsHandler)
-	registerAPIHandler(mux, apiPaths[4], totalMoviesWatchedHandler) // New stat handler
-	registerAPIHandler(mux, apiPaths[5], totalMoviesRatedHandler)   // New stat handler
-	registerAPIHandler(mux, apiPaths[6], totalHoursWatchedHandler)  // New stat handler
-	registerAPIHandler(mux, apiPaths[7], rewatchStatsHandler)       // New stat handler
+	registerAPIHandler(mux, apiPaths[4], totalMoviesWatchedHandler)
+	registerAPIHandler(mux, apiPaths[5], totalMoviesRatedHandler)
+	registerAPIHandler(mux, apiPaths[6], totalHoursWatchedHandler)
+	registerAPIHandler(mux, apiPaths[7], rewatchStatsHandler)
+	registerAPIHandler(mux, apiPaths[8], mostRewatchedMoviesHandler) // Register new handler
 
 	// --- Server Startup ---
 	logServerStartupInfo(port, apiPaths)
