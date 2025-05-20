@@ -39,3 +39,8 @@ type RewatchedMovieData struct {
 	FilmLink     string `json:"letterboxd_uri"`
 	RewatchCount int    `json:"rewatch_count"`
 }
+
+type MoviesWatchedOverTimeChartData struct {
+	Labels   []interface{} `json:"labels"` // MODIFIED: Changed from []string to []interface{}
+	Datasets []Dataset     `json:"datasets"`
+}

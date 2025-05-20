@@ -401,88 +401,88 @@ func FetchMostRewatchedMovies(limit int) ([]RewatchedMovieData, error) {
 	return movies, nil
 }
 
-func FetchFilmCountsByWatchDate() (ChartData, error) {
+// FetchFilmCountsByWatchDate retrieves movie counts grouped by month and year,
+// formatting labels for Chart.js to show the year only on the first month of that year displayed.
+func FetchFilmCountsByWatchDate() (MoviesWatchedOverTimeChartData, error) {
 	if db == nil {
 		log.Println("FetchFilmCountsByWatchDate: Database connection is not initialized.")
-		return ChartData{}, sql.ErrConnDone
+		return MoviesWatchedOverTimeChartData{}, sql.ErrConnDone
 	}
 
+	// The SQL query needs to provide year and month name, ordered correctly.
+	// EXTRACT(MONTH FROM watched_date) is crucial for correct chronological ordering.
 	query := `
 SELECT
     EXTRACT(YEAR FROM watched_date) AS watch_year,
-    EXTRACT(MONTH FROM watched_date) AS watch_month,
-    TRIM(TO_CHAR(watched_date, 'Month')) AS month_name, -- TRIM to remove potential trailing spaces
+    TRIM(TO_CHAR(watched_date, 'Month')) AS month_name, -- e.g., "January", "February"
     COUNT(*) AS movies_watched_count
 FROM
     diary_entries
-WHERE 
-    watched_date IS NOT NULL -- Good practice to ensure watched_date is not null
+WHERE
+    watched_date IS NOT NULL
 GROUP BY
-    watch_year,
-    watch_month,
-    month_name
+    watch_year,        -- Year
+    month_name,        -- Textual month name
+    EXTRACT(MONTH FROM watched_date) -- Numeric month for correct grouping and ordering
 ORDER BY
     watch_year ASC,
-    watch_month ASC;
+    EXTRACT(MONTH FROM watched_date) ASC; -- Order chronologically by year, then by numeric month
 `
 	rows, err := db.Query(query)
 	if err != nil {
 		log.Println("Database query error in FetchFilmCountsByWatchDate:", err)
-		return ChartData{}, err
+		return MoviesWatchedOverTimeChartData{}, err
 	}
 	defer rows.Close()
 
-	var chartLabels []string // Renamed from 'years' for clarity
-	var movieCounts []int    // Renamed from 'counts' for clarity
+	var chartLabels []interface{} // Will hold strings or []string
+	var movieCounts []int
 
-	// Helper map to get short month names if needed, or use the full month_name from query
-	// monthMap := map[int]string{
-	// 	1:  "Jan", 2:  "Feb", 3:  "Mar", 4:  "Apr",
-	// 	5:  "May", 6:  "Jun", 7:  "Jul", 8:  "Aug",
-	// 	9:  "Sep", 10: "Oct", 11: "Nov", 12: "Dec",
-	// }
+	var previousYear int64 = 0 // Initialize to a value that won't match the first actual year
 
 	for rows.Next() {
 		var watchYear int64
-		var watchMonth int // Month number, not directly used for label if month_name is good
-		var monthName string
+		var monthNameFromDB string // e.g., "OCTOBER  " or "November" depending on DB and TO_CHAR
 		var moviesWatchedCount int
 
-		// Scan the four columns from the query result
-		if err := rows.Scan(&watchYear, &watchMonth, &monthName, &moviesWatchedCount); err != nil {
+		// Scan the three columns from the query result
+		if err := rows.Scan(&watchYear, &monthNameFromDB, &moviesWatchedCount); err != nil {
 			log.Println("Row scanning error in FetchFilmCountsByWatchDate:", err)
-			return ChartData{}, err
+			return MoviesWatchedOverTimeChartData{}, err
 		}
 
-		// Create a label like "January 2023" or "Jan 2023"
-		// Using the first 3 letters of monthName and the year
-		var label string
-		if len(monthName) >= 3 {
-			label = fmt.Sprintf("%s %s", strings.Title(strings.ToLower(monthName[:3])), strconv.FormatInt(watchYear, 10))
-		} else { // Fallback if monthName is unexpectedly short
-			label = fmt.Sprintf("%s %s", monthName, strconv.FormatInt(watchYear, 10))
-		}
-		// Or, if you prefer full month name:
-		// label = fmt.Sprintf("%s %s", monthName, strconv.FormatInt(watchYear, 10))
+		// Process monthNameFromDB to ensure consistent Title Casing (e.g., "January")
+		// TRIM in SQL should handle spaces. This handles casing.
+		processedMonthName := strings.Title(strings.ToLower(monthNameFromDB))
 
-		chartLabels = append(chartLabels, label)
+		var currentLabel interface{}
+		if watchYear != previousYear {
+			// This is the first month of this 'watchYear' encountered in the dataset,
+			// or it's the very first data point.
+			currentLabel = []string{processedMonthName, strconv.FormatInt(watchYear, 10)}
+			previousYear = watchYear // Update previousYear for the next iteration
+		} else {
+			// This is a subsequent month for the current 'previousYear'.
+			currentLabel = processedMonthName
+		}
+
+		chartLabels = append(chartLabels, currentLabel)
 		movieCounts = append(movieCounts, moviesWatchedCount)
 	}
 
 	if err := rows.Err(); err != nil {
 		log.Println("Rows iteration error in FetchFilmCountsByWatchDate:", err)
-		return ChartData{}, err
+		return MoviesWatchedOverTimeChartData{}, err
 	}
 
-	chartData := ChartData{
+	MoviesWatchedOverTimeChartData := MoviesWatchedOverTimeChartData{
 		Labels: chartLabels,
 		Datasets: []Dataset{
 			{
-				Label: "Movies Watched per Month", // More specific label
+				Label: "Movies Watched per Month",
 				Data:  movieCounts,
-				// You might want to add backgroundColor, borderColor etc. here or in ChartConfig.js
 			},
 		},
 	}
-	return chartData, nil
+	return MoviesWatchedOverTimeChartData, nil
 }
