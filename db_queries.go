@@ -353,6 +353,7 @@ func FetchMostRewatchedMovies(limit int) ([]RewatchedMovieData, error) {
 			f.id AS film_id,
 			f.title,
 			f.poster_path,
+			f.letterboxd_uri,
 			COUNT(de.id) AS rewatch_count
 		FROM
 			films f
@@ -379,7 +380,7 @@ func FetchMostRewatchedMovies(limit int) ([]RewatchedMovieData, error) {
 		var movie RewatchedMovieData
 		// Ensure poster_path can be NULL in the DB and handle it
 		var posterPath sql.NullString
-		if err := rows.Scan(&movie.FilmID, &movie.Title, &posterPath, &movie.RewatchCount); err != nil {
+		if err := rows.Scan(&movie.FilmID, &movie.Title, &posterPath, &movie.FilmLink, &movie.RewatchCount); err != nil {
 			log.Println("Row scanning error in FetchMostRewatchedMovies:", err)
 			return nil, err
 		}

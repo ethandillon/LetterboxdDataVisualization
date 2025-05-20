@@ -36,5 +36,6 @@ type RewatchedMovieData struct {
 	FilmID       int    `json:"film_id"`
 	Title        string `json:"title"`
 	PosterPath   string `json:"poster_path"`
+	FilmLink     string `json:"letterboxd_uri"`
 	RewatchCount int    `json:"rewatch_count"`
 }

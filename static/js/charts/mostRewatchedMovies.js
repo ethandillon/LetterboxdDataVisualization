@@ -36,18 +36,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     let posterElement;
                     if (movie.poster_path) {
                         posterElement = document.createElement('img');
-                        posterElement.className = 'poster'; // Only 'poster'
+                        posterElement.className = 'poster';
                         posterElement.src = posterUrl;
                         posterElement.alt = `Poster for ${movie.title}`;
-                        posterElement.onerror = function() { // Fallback if image fails to load
+                        posterElement.onerror = function() { 
                             this.onerror=null; 
-                            this.src=PLACEHOLDER_IMAGE_URL.replace('185x278', `${posterSize.substring(1)}x${Math.round(parseInt(posterSize.substring(1)) * 1.5)}`); // Adjust placeholder size
+                            this.src=PLACEHOLDER_IMAGE_URL.replace('185x278', `${posterSize.substring(1)}x${Math.round(parseInt(posterSize.substring(1)) * 1.5)}`);
                         };
                     } else {
                         posterElement = document.createElement('div');
-                        posterElement.className = 'poster poster-placeholder'; // Added 'poster' class
-                        // posterElement.style.width = posterSize.substring(1) + 'px'; // not needed if card handles width
+                        posterElement.className = 'poster poster-placeholder';
                         posterElement.textContent = 'No Poster';
+                    }
+                    
+                    // Create an anchor element for the poster
+                    let posterLinkElement;
+                    if (movie.letterboxd_uri) {
+                        posterLinkElement = document.createElement('a');
+                        posterLinkElement.href = movie.letterboxd_uri;
+                        posterLinkElement.target = '_blank'; // Open link in a new tab
+                        posterLinkElement.rel = 'noopener noreferrer'; // Security best practice
+                        // Optional: Add a title to the link for accessibility/tooltip
+                        // posterLinkElement.title = `View ${movie.title} on Letterboxd`;
+                        posterLinkElement.appendChild(posterElement); // Wrap the poster with the link
+                    } else {
+                        // If no letterboxd_uri, just use the posterElement directly
+                        posterLinkElement = posterElement;
                     }
                     
                     const infoDiv = document.createElement('div');
@@ -57,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     rewatchCountP.className = 'rewatch-count';
                     rewatchCountP.textContent = `${movie.rewatch_count} rewatch${movie.rewatch_count > 1 ? 'es' : ''}`;
                     
-                    card.title = movie.title; // Browser tooltip
+                    card.title = movie.title; // Browser tooltip for the whole card
 
                     infoDiv.appendChild(rewatchCountP);
                     
@@ -67,25 +81,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     // titleP.textContent = movie.title;
                     // infoDiv.appendChild(titleP);
 
-
-                    card.appendChild(posterElement);
+                    card.appendChild(posterLinkElement); // Add the (potentially linked) poster to the card
                     card.appendChild(infoDiv);
                     container.appendChild(card);
                 });
                 if (errorMessageElement && container === moviesContainer) errorMessageElement.classList.add('hidden');
             } else {
-                container.innerHTML = `<p class="text-muted text-center w-100" style="grid-column: 1 / -1;">No rewatched movies found.</p>`; // Span full width if grid
+                container.innerHTML = `<p class="text-muted text-center w-100" style="grid-column: 1 / -1;">No rewatched movies found.</p>`;
                  if (errorMessageElement && container === moviesContainer) errorMessageElement.classList.add('hidden');
             }
 
         } catch (error) {
             console.error('Error fetching most rewatched movies:', error);
-            if (errorMessageElement && container === moviesContainer) { // Only show main error message for main container
+            if (errorMessageElement && container === moviesContainer) {
                 errorMessageElement.textContent = 'Failed to load most rewatched movies. ' + error.message;
                 errorMessageElement.classList.remove('hidden');
             }
             if (container) { 
-                container.innerHTML = `<p class="text-danger text-center w-100" style="grid-column: 1 / -1;">Error loading movies.</p>`; // Span full width
+                container.innerHTML = `<p class="text-danger text-center w-100" style="grid-column: 1 / -1;">Error loading movies.</p>`;
             }
         }
     }
