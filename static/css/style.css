@@ -352,12 +352,14 @@ a:visted{
        Override here if specific fullscreen appearance is needed */
 }
 
-/* Poster within fullscreen card */
+/* 
+Poster within fullscreen card
 .fullscreen-generic-content-container .movie-card .poster {
-    /* width: 100%; height: auto; is already general style */
+    width: 100%; height: auto; is already general style
 }
 
-/* Rewatch info within fullscreen card */
+Rewatch info within fullscreen card
 .fullscreen-generic-content-container .movie-card .rewatch-info {
-    /* Styles can be inherited or specifically adjusted for fullscreen, e.g., font-size */
-}
+    Styles can be inherited or specifically adjusted for fullscreen, e.g., font-size
+}  
+*/
