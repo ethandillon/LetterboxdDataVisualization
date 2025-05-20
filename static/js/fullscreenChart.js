@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetId = buttonElement.dataset.targetId;
         const type = buttonElement.dataset.type || 'chart'; 
 
-        // ... (reset logic as before) ...
         fullscreenCanvasContainer.classList.add('hidden');
         if (fullscreenChartInstance) {
             fullscreenChartInstance.destroy();
@@ -32,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
         currentFullscreenTargetId = targetId;
 
         if (type === 'chart') {
-            // ... (Keep existing chart logic as is - OMITTED FOR BREVITY, NO CHANGES HERE) ...
             const originalChartInstance = Chart.getChart(targetId); 
 
             if (!originalChartInstance) {
@@ -42,12 +40,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let dataForFullscreen;
-            let optionsForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.options));
+            // Ensure originalChartInstance.config.options exists, default to empty object if not
+            let optionsForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.options || {}));
 
+            // Initialize/ensure scales object and its sub-properties exist for bar/line charts
+            // This will be cleaned up later for pie/doughnut charts
             optionsForFullscreen.scales = optionsForFullscreen.scales || {};
             optionsForFullscreen.scales.x = optionsForFullscreen.scales.x || {};
             optionsForFullscreen.scales.x.title = optionsForFullscreen.scales.x.title || {}; 
-
             optionsForFullscreen.scales.y = optionsForFullscreen.scales.y || {};
             optionsForFullscreen.scales.y.title = optionsForFullscreen.scales.y.title || {};
 
@@ -109,22 +109,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 options: {
                     ...optionsForFullscreen,
                     animation: false,
+                    maintainAspectRatio: false, // Ensure fullscreen chart can resize freely
+                    responsive: true,
                 }
             };
 
-            if (chartConfig.options) {
-                chartConfig.options.maintainAspectRatio = false;
-                chartConfig.options.responsive = true;
-            } else {
-                chartConfig.options = { maintainAspectRatio: false, responsive: true };
+            // START FIX: Remove scales for pie/doughnut charts
+            if (chartConfig.type === 'pie' || chartConfig.type === 'doughnut') {
+                if (chartConfig.options.scales) {
+                    delete chartConfig.options.scales;
+                }
             }
+            // END FIX
 
-            if (targetId === 'MoviesByGenrePieChart') {
+            // Specific legend handling for MoviesByGenrePieChart (assuming it's a pie or doughnut)
+            if (targetId === 'MoviesByGenrePieChart') { // You can also combine with chartConfig.type check if needed
                 chartConfig.options.plugins = chartConfig.options.plugins || {};
                 chartConfig.options.plugins.legend = chartConfig.options.plugins.legend || {};
                 const existingLabelOptions = chartConfig.options.plugins.legend.labels || {};
                 chartConfig.options.plugins.legend = {
-                    ...chartConfig.options.plugins.legend,
+                    ...(chartConfig.options.plugins.legend), // Preserve other legend settings
                     display: true,
                     position: 'top',
                     align: 'center',
@@ -144,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fullscreenCanvasContainer.classList.remove('hidden');
 
         } else if (type === 'generic') {
+            // ... (generic content logic remains the same) ...
             fullscreenGenericContentHost.innerHTML = ''; 
 
             if (targetId === 'mostRewatchedMoviesContainer' && typeof window.MyAppGlobal?.fetchAndDisplayMostRewatched === 'function') {
@@ -164,12 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.MyAppGlobal.fetchAndDisplayMostRewatched(
                     14, 
                     fullscreenMovieGrid, 
-                    'w342' // CHANGED: Use a larger poster size like 'w342' or 'w500'
+                    'w342'
                 );
                 fullscreenGenericContentHost.classList.remove('hidden');
 
             } else {
-                // ... (Fallback for other generic content - OMITTED FOR BREVITY, NO CHANGES HERE) ...
                 const originalContentElement = document.getElementById(targetId);
                 if (originalContentElement) {
                     const contentWrapper = document.createElement('div');
@@ -199,7 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function exitFullscreen() {
-        // ... (rest of exitFullscreen remains the same - OMITTED FOR BREVITY, NO CHANGES HERE) ...
         if (currentFullscreenType === 'chart' && fullscreenChartInstance) {
             fullscreenChartInstance.destroy();
             fullscreenChartInstance = null;
@@ -218,7 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
         currentFullscreenTargetId = null;
     }
 
-    // ... (event listeners remain the same - OMITTED FOR BREVITY, NO CHANGES HERE) ...
     fullscreenBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             enterFullscreen(btn); 
