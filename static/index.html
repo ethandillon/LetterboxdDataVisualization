@@ -17,34 +17,38 @@
     <div class="container-fluid mt-4 mb-4">
         <!-- Stat Boxes Row -->
         <div class="row g-4 mb-4">
-            <!-- Stat Box 1: Movies Watched -->
+            <!-- Stat Box 1: Movies Watched (LINK) -->
             <div class="col-lg-3 col-md-6">
-                <div class="stat-box">
-                    <div class="stat-box-content">
-                        <h5 class="stat-box-title">MOVIES WATCHED</h5>
-                        <p class="stat-box-value" id="totalMoviesWatched">0</p>
-                        <!-- Optional: <p class="stat-box-subtext positive">+X% Since last month</p> -->
-                    </div>
-                    <div class="stat-box-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                    </div>
+                <div class="stat-box is-link"> 
+                    <a href="https://letterboxd.com/chillindillon3/films/" class="stat-box-link" target="_blank">
+                        <div class="stat-box-content">
+                            <h5 class="stat-box-title">MOVIES WATCHED</h5>
+                            <p class="stat-box-value" id="totalMoviesWatched">0</p>
+                        </div>
+                        <div class="stat-box-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        </div>
+                    </a>
                 </div>
             </div>
-            <!-- Stat Box 2: Movies Rated -->
+            
+            <!-- Stat Box 2: Movies Rated (NOT A LINK) -->
             <div class="col-lg-3 col-md-6">
-                <div class="stat-box">
-                    <div class="stat-box-content">
-                        <h5 class="stat-box-title">MOVIES RATED</h5>
-                        <p class="stat-box-value" id="totalMoviesRated">0</p>
-                    </div>
-                    <div class="stat-box-icon">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                    </div>
+                <div class="stat-box is-link"> 
+                    <a href="https://letterboxd.com/chillindillon3/films/rated/.5-5/" class="stat-box-link" target="_blank">
+                        <div class="stat-box-content">
+                            <h5 class="stat-box-title">MOVIES RATED</h5>
+                            <p class="stat-box-value" id="totalMoviesRated">0</p>
+                        </div>
+                        <div class="stat-box-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        </div>
+                    </a>
                 </div>
             </div>
-            <!-- Stat Box 3: Hours Watched -->
+            <!-- Stat Box 3: Hours Watched (NOT A LINK) -->
             <div class="col-lg-3 col-md-6">
-                <div class="stat-box">
+                <div class="stat-box"> 
                     <div class="stat-box-content">
                         <h5 class="stat-box-title">HOURS WATCHED</h5>
                         <p class="stat-box-value" id="totalHoursWatched">0.0</p>
@@ -54,9 +58,9 @@
                     </div>
                 </div>
             </div>
-            <!-- Stat Box 4: Rewatches / New -->
+            <!-- Stat Box 4: Rewatches / New (NOT A LINK) -->
             <div class="col-lg-3 col-md-6">
-                <div class="stat-box">
+                <div class="stat-box"> 
                     <div class="stat-box-content">
                         <h5 class="stat-box-title">REWATCHES / NEW</h5>
                         <p class="stat-box-value" id="rewatchStats">0 / 0</p>
@@ -67,7 +71,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Existing Chart Row -->
         <div class="row g-4 d-flex align-items-stretch mb-4">
             <!-- Chart 1: Release Year -->
@@ -143,8 +146,9 @@
         <div id="fullscreenGenericContentHost" class="fullscreen-generic-content-container hidden"> 
             <!-- Cloned generic content will go here -->
         </div>
+        <!-- ... (rest of your HTML) ... -->
     </div>
-
+    <!-- ... (scripts) ... -->
     <script src="/MoviesByReleaseYearChart.js" defer></script>
     <script src="/MoviesByGenrePieChart.js" defer></script>
     <script src="/TopDirectorsChart.js" defer></script>
@@ -153,7 +157,5 @@
     <script src="/statsLoader.js" defer></script>
     <script src="/mostRewatchedMovies.js" defer></script>
     <script src="/MoviesWatchedOverTimeChart.js" defer></script>
-
-
 </body>
 </html>
