@@ -188,9 +188,9 @@ a:visted{
 .rewatched-movies-grid {
     display: grid;
     gap: 15px; 
-    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); 
-    justify-content: center; 
-    justify-items: center;   
+    grid-template-columns: repeat(5,1fr);
+    justify-items: center; 
+    align-items: center;   
 }
 
 .movie-card { /* NORMAL VIEW card styles */
@@ -249,6 +249,16 @@ a:visted{
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%; 
+}
+
+@media (max-width: 767.98px) {
+    .movie-list-container > .rewatched-movies-grid .movie-card {
+        max-width: 280px; /* Allow cards to be a bit wider on mobile,
+                             centered in the single column.
+                             Overrides the base max-width: 200px. */
+        /* Other .movie-card properties like background, flex-direction, etc., are inherited
+           unless specifically overridden here for mobile. */
+    }
 }
 
 /* --- Fullscreen Button Styles --- */
