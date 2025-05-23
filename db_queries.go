@@ -139,19 +139,22 @@ func FetchTopDirectors(limit int) (ChartData, error) {
 
 	// Query to get the top 5 directors by film count
 	query := fmt.Sprintf(`
-		SELECT
-			director,
-			COUNT(*) as film_count
-		FROM
-			films
-		WHERE
-			director IS NOT NULL AND director <> ''
-		GROUP BY
-			director
-		ORDER BY
-			film_count DESC
-		LIMIT %d;
-	`, limit)
+-- Alternative query using a LATERAL JOIN which is often clearer
+SELECT
+	d.name AS director_name,
+	COUNT(*) AS film_count
+FROM
+	films f,
+	LATERAL UNNEST(f.directors) AS d(name) -- d.name will be each director
+WHERE
+	f.directors IS NOT NULL AND array_length(f.directors, 1) > 0 -- Optional pre-filter for the films table
+	AND d.name IS NOT NULL AND d.name <> '' -- Filter unnested names
+GROUP BY
+	d.name
+ORDER BY
+	film_count DESC
+LIMIT %d;
+		`, limit)
 
 	rows, err := db.Query(query)
 	if err != nil {
