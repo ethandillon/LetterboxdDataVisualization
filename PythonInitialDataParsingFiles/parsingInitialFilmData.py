@@ -42,17 +42,18 @@ TABLE_NAME = "films"
 # TMDb API base URL
 TMDB_API_URL = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/"
-TMDB_PROFILE_SIZE = "w185" # Example profile image size
+TMDB_PROFILE_SIZE = "w185" # Example profile image size for actors and directors
 
 # Delay between TMDb API calls (in seconds) to respect rate limits
-API_CALL_DELAY = 0.5 # Adjust as needed, be respectful of TMDb's rate limits
+# Consider increasing this if you have many directors per film.
+API_CALL_DELAY = 0.6 # Adjusted slightly for more calls
 
 # Number of top actors to store
 TOP_N_ACTORS = 5
 
 # Threshold for title similarity (0.0 to 1.0). 
 # A higher value means stricter matching.
-TITLE_SIMILARITY_THRESHOLD = 0.8  # Example: 80% similarity required
+TITLE_SIMILARITY_THRESHOLD = 0.8
 
 # Maximum allowed year difference for a "close" year match
 YEAR_DIFF_THRESHOLD_FOR_MATCHING = 2 
@@ -73,7 +74,6 @@ def safe_print_str(s, default_encoding='utf-8'):
     
     if not effective_encoding: # If None (e.g., redirected output, some IDEs)
         try:
-            # locale.getencoding() is often more reliable than getpreferredencoding on some systems
             effective_encoding = locale.getencoding() 
         except Exception:
             pass 
@@ -82,13 +82,8 @@ def safe_print_str(s, default_encoding='utf-8'):
         effective_encoding = default_encoding
 
     try:
-        # Encode to UTF-8 (a universal format) first, then decode to the effective_encoding.
-        # This handles cases where 's' might contain characters not directly mappable
-        # by effective_encoding but can be represented by UTF-8 and then 'replaced' during decode.
         return s.encode('utf-8', errors='replace').decode(effective_encoding, errors='replace')
     except Exception:
-        # Ultimate fallback: encode to ASCII with replace, then decode.
-        # This will lose more data (non-ASCII chars become '?') but is very safe for printing.
         return s.encode('ascii', errors='replace').decode('ascii', errors='replace')
 
 
@@ -117,7 +112,7 @@ def connect_db():
 def create_table_if_not_exists(conn):
     """
     Creates the table in the database with the TMDb-focused schema,
-    including multiple directors and actor profile paths, and removing overview.
+    including multiple directors with profile paths and actor profile paths.
     """
     cursor = conn.cursor()
     trigger_name_str = f"update_{TABLE_NAME}_modtime"
@@ -129,7 +124,8 @@ def create_table_if_not_exists(conn):
             tmdb_id INTEGER UNIQUE,
             title TEXT,
             year INTEGER,
-            directors TEXT[], 
+            directors TEXT[],
+            directors_profile_paths TEXT[], -- New column for director profile images
             actors TEXT[],
             actor_profile_paths TEXT[], 
             poster_path TEXT,
@@ -165,7 +161,7 @@ def create_table_if_not_exists(conn):
 
     try:
         cursor.execute(create_table_query)
-        print(f"Table '{safe_print_str(TABLE_NAME)}' checked/created successfully (schema includes: directors TEXT[], actor_profile_paths TEXT[]).")
+        print(f"Table '{safe_print_str(TABLE_NAME)}' checked/created successfully (schema includes: directors_profile_paths TEXT[]).")
         cursor.execute(create_trigger_function_query)
         print("Function 'update_modified_column' checked/created successfully.")
         cursor.execute(create_trigger_query)
@@ -254,278 +250,170 @@ def process_csv_and_insert_data(conn, csv_file_path):
         if cursor and not cursor.closed: cursor.close()
 
 def calculate_normalized_similarity(s1, s2):
-    """
-    Calculates normalized Levenshtein similarity between two strings.
-    Returns a float between 0.0 (no similarity) and 1.0 (exact match).
-    Comparison is case-insensitive.
-    """
-    if not isinstance(s1, str) or not isinstance(s2, str):
-        return 0.0 # Or raise an error, but for this context, 0.0 is safer
-
-    s1_lower = s1.lower()
-    s2_lower = s2.lower()
-
-    if not s1_lower and not s2_lower: # Both empty
-        return 1.0
-    if not s1_lower or not s2_lower: # One is empty
-        return 0.0
-
+    if not isinstance(s1, str) or not isinstance(s2, str): return 0.0
+    s1_lower, s2_lower = s1.lower(), s2.lower()
+    if not s1_lower and not s2_lower: return 1.0
+    if not s1_lower or not s2_lower: return 0.0
     distance = Levenshtein.distance(s1_lower, s2_lower)
     max_len = max(len(s1_lower), len(s2_lower))
-    
-    if max_len == 0: # Should be caught by above checks, but as a safeguard
-        return 1.0 if distance == 0 else 0.0 
-        
-    similarity = 1.0 - (distance / max_len)
-    return similarity
-
+    if max_len == 0: return 1.0 if distance == 0 else 0.0
+    return 1.0 - (distance / max_len)
 
 def get_closest_year_match(tmdb_results, target_year, original_lb_title):
-    """
-    Finds the TMDb result that best matches the original_lb_title and target_year,
-    using Levenshtein distance for title similarity and a configurable threshold.
-    """
-    if not tmdb_results or not original_lb_title:
-        return None
-
-    # 1. Calculate similarity for all results and filter by TITLE_SIMILARITY_THRESHOLD
+    if not tmdb_results or not original_lb_title: return None
     candidates_info = []
     for result in tmdb_results:
         tmdb_title = result.get('title')
-        if not tmdb_title:
-            continue
-        
+        if not tmdb_title: continue
         similarity_score = calculate_normalized_similarity(original_lb_title, tmdb_title)
-        
         if similarity_score >= TITLE_SIMILARITY_THRESHOLD:
-            candidates_info.append({
-                'result_obj': result, 
-                'similarity': similarity_score,
-                'popularity': result.get('popularity', 0.0) # Ensure popularity is float for sorting
-            })
-
-    if not candidates_info:
-        # print(f"  DEBUG: No TMDb results for '{safe_print_str(original_lb_title)}' met similarity threshold {TITLE_SIMILARITY_THRESHOLD}.")
-        return None
-
-    # 2. Categorize candidates by year match quality
-    exact_year_matches = []
-    close_year_matches = []
-    other_title_matches = [] # Matches that pass similarity but not year criteria, or if target_year is None
-
+            candidates_info.append({'result_obj': result, 'similarity': similarity_score, 'popularity': result.get('popularity', 0.0)})
+    if not candidates_info: return None
+    exact_year_matches, close_year_matches, other_title_matches = [], [], []
     for cand_info in candidates_info:
-        result_obj = cand_info['result_obj']
-        tmdb_year = None
+        result_obj, tmdb_year = cand_info['result_obj'], None
         release_date_str = result_obj.get('release_date')
-
         if release_date_str and isinstance(release_date_str, str) and len(release_date_str) >= 4:
             try:
                 tmdb_year_str = release_date_str.split('-')[0]
-                if len(tmdb_year_str) == 4: # Basic validation for year format
-                    tmdb_year = int(tmdb_year_str)
-            except ValueError:
-                # print(f"  DEBUG: Could not parse year from release_date '{release_date_str}' for TMDb title '{result_obj.get('title')}'.")
-                tmdb_year = None 
-
+                if len(tmdb_year_str) == 4: tmdb_year = int(tmdb_year_str)
+            except ValueError: tmdb_year = None
         if target_year is not None and tmdb_year is not None:
             year_difference = abs(tmdb_year - target_year)
-            if tmdb_year == target_year:
-                exact_year_matches.append(cand_info)
+            if tmdb_year == target_year: exact_year_matches.append(cand_info)
             elif year_difference <= YEAR_DIFF_THRESHOLD_FOR_MATCHING:
-                cand_info['year_diff'] = year_difference 
-                close_year_matches.append(cand_info)
-            else:
-                other_title_matches.append(cand_info)
-        else: # target_year is None, or tmdb_year could not be determined for this result
-            other_title_matches.append(cand_info)
-
-    # 3. Select best match based on prioritized categories
+                cand_info['year_diff'] = year_difference; close_year_matches.append(cand_info)
+            else: other_title_matches.append(cand_info)
+        else: other_title_matches.append(cand_info)
     if exact_year_matches:
-        # Sort by similarity (desc), then popularity (desc)
         exact_year_matches.sort(key=lambda x: (x['similarity'], x['popularity']), reverse=True)
-        # print(f"  DEBUG: Exact year match chosen for '{safe_print_str(original_lb_title)}': '{safe_print_str(exact_year_matches[0]['result_obj'].get('title'))}' (Sim: {exact_year_matches[0]['similarity']:.2f})")
         return exact_year_matches[0]['result_obj']
-    
     if close_year_matches:
-        # Sort by year_diff (asc), then similarity (desc), then popularity (desc)
         close_year_matches.sort(key=lambda x: (x['year_diff'], -x['similarity'], -x['popularity']))
-        # print(f"  DEBUG: Close year match chosen for '{safe_print_str(original_lb_title)}': '{safe_print_str(close_year_matches[0]['result_obj'].get('title'))}' (Diff: {close_year_matches[0]['year_diff']}, Sim: {close_year_matches[0]['similarity']:.2f})")
         return close_year_matches[0]['result_obj']
-
     if other_title_matches:
-        # Sort by similarity (desc), then popularity (desc)
         other_title_matches.sort(key=lambda x: (x['similarity'], x['popularity']), reverse=True)
-        # print(f"  DEBUG: Other title match chosen for '{safe_print_str(original_lb_title)}': '{safe_print_str(other_title_matches[0]['result_obj'].get('title'))}' (Sim: {other_title_matches[0]['similarity']:.2f})")
         return other_title_matches[0]['result_obj']
-        
-    # print(f"  DEBUG: No suitable match found for '{safe_print_str(original_lb_title)}' after all selection logic.")
     return None
 
 
 def enrich_films_with_tmdb_data(conn):
     """
     Fetches films from DB that need TMDb enrichment, searches TMDb,
-    extracts details including multiple directors, top actors with profile paths,
-    and updates the DB (overview removed).
+    extracts details including multiple directors with profile paths, top actors with profile paths,
+    and updates the DB.
     """
     # --- BEGIN SCHEMA VALIDATION ---
-    # Columns specifically used in the WHERE clause for NULL checks during enrichment query
-    columns_to_check_for_null_filter = ["tmdb_id", "poster_path", "actors", "directors", "actor_profile_paths"]
-    expected_column_types = { # Used for providing helpful error messages
-        "tmdb_id": "INTEGER",
-        "poster_path": "TEXT",
-        "actors": "TEXT[]",
-        "directors": "TEXT[]",
-        "actor_profile_paths": "TEXT[]"
+    columns_to_check_for_null_filter = [
+        "tmdb_id", "poster_path", "actors", "directors", 
+        "actor_profile_paths", "directors_profile_paths" # Added directors_profile_paths
+    ]
+    expected_column_types = {
+        "tmdb_id": "INTEGER", "poster_path": "TEXT", "actors": "TEXT[]", "directors": "TEXT[]",
+        "actor_profile_paths": "TEXT[]", "directors_profile_paths": "TEXT[]" # Added directors_profile_paths
     }
     column_check_cursor = None
     try:
         column_check_cursor = conn.cursor()
         for col_name in columns_to_check_for_null_filter:
             try:
-                # Try a minimal query to check for column existence. LIMIT 0 means no data is fetched.
                 column_check_cursor.execute(sql.SQL("SELECT {column} FROM {table} LIMIT 0").format(
-                    column=sql.Identifier(col_name),
-                    table=sql.Identifier(TABLE_NAME)
-                ))
+                    column=sql.Identifier(col_name), table=sql.Identifier(TABLE_NAME)))
             except psycopg2.ProgrammingError as pe:
-                # Check if the error is specifically about a missing column
                 if "column" in str(pe).lower() and "does not exist" in str(pe).lower():
                     print(f"\n--- SCHEMA MISMATCH DETECTED ---")
-                    print(f"Critical Error: The column '{safe_print_str(col_name)}' (expected type: {expected_column_types.get(col_name, 'UNKNOWN')}) "
-                          f"does not exist in your '{safe_print_str(TABLE_NAME)}' table.")
-                    print(f"The script expects this column for its enrichment process, as defined in its `create_table_if_not_exists` function.")
-                    print(f"This usually occurs if the table was created by an older version of this script, "
-                          f"manually with a different schema, or if an `ALTER TABLE` operation was incomplete.")
-                    print(f"PostgreSQL Hint: {pe.diag.message_primary if hasattr(pe, 'diag') and pe.diag.message_primary else 'No hint available.'}")
-
-
-                    print(f"\nTo resolve this, you need to align your database schema with the script's expectations:")
-                    print(f"1. Inspect your current table schema. In psql, connect to your database '{safe_print_str(DB_NAME)}' and run: \\d {safe_print_str(TABLE_NAME)}")
-                    print(f"2. Compare it with the schema defined in this script's `create_table_if_not_exists` function.")
-                    print(f"3. You may need to:")
-                    print(f"   a) Manually ALTER the table. Examples:")
-                    print(f"      - If '{safe_print_str(col_name)}' is missing: `ALTER TABLE {safe_print_str(TABLE_NAME)} ADD COLUMN {safe_print_str(col_name)} {expected_column_types.get(col_name, 'APPROPRIATE_TYPE')};`")
-                    print(f"      - If the column exists but has a different name (e.g., 'director' instead of 'directors'): "
-                          f"`ALTER TABLE {safe_print_str(TABLE_NAME)} RENAME COLUMN old_column_name TO {safe_print_str(col_name)};`")
-                    print(f"      - If the column exists but has the wrong type (e.g., TEXT instead of TEXT[] for 'directors'): "
-                          f"`ALTER TABLE {safe_print_str(TABLE_NAME)} ALTER COLUMN {safe_print_str(col_name)} TYPE {expected_column_types.get(col_name, 'APPROPRIATE_TYPE')};` (may require a USING clause for complex conversions).")
-                    print(f"   b) If this is a fresh setup or you are okay with losing ALL data in the '{safe_print_str(TABLE_NAME)}' table, "
-                          f"you can DROP the table (`DROP TABLE {safe_print_str(TABLE_NAME)};`) and let this script recreate it on the next run.")
-                    print(f"--- SCRIPT EXECUTION HALTED DUE TO SCHEMA MISMATCH ---")
-                    conn.rollback() # Ensure no pending transaction from the failed check
-                    return # Stop further processing in this function
-                else:
-                    raise # Re-raise other programming errors not related to missing columns
-        # If all checks pass, optionally print a success message
-        # print("Schema validation: All critical columns for enrichment query exist.")
-    except psycopg2.Error as e: # Catch other database errors during validation
-        print(f"A PostgreSQL error occurred during schema validation: {e}")
-        conn.rollback()
-        return
-    except Exception as e: # Catch any other unexpected errors
-        print(f"An unexpected error occurred during schema validation: {e}")
-        conn.rollback() # Rollback if an error occurred
-        return
+                    print(f"Critical Error: Column '{safe_print_str(col_name)}' (expected type: {expected_column_types.get(col_name, 'UNKNOWN')}) "
+                          f"does not exist in '{safe_print_str(TABLE_NAME)}'.")
+                    print(f"PostgreSQL Hint: {pe.diag.message_primary if hasattr(pe, 'diag') and pe.diag.message_primary else 'No hint.'}")
+                    print(f"Please ensure your DB schema matches the script's `create_table_if_not_exists` definition.")
+                    print(f"You may need to: `ALTER TABLE {safe_print_str(TABLE_NAME)} ADD COLUMN {safe_print_str(col_name)} {expected_column_types.get(col_name, 'APPROPRIATE_TYPE')};`")
+                    print(f"--- SCRIPT EXECUTION HALTED ---")
+                    conn.rollback(); return
+                else: raise
+    except psycopg2.Error as e: print(f"PostgreSQL error during schema validation: {e}"); conn.rollback(); return
+    except Exception as e: print(f"Unexpected error during schema validation: {e}"); conn.rollback(); return
     finally:
-        if column_check_cursor and not column_check_cursor.closed:
-            column_check_cursor.close()
+        if column_check_cursor and not column_check_cursor.closed: column_check_cursor.close()
     # --- END SCHEMA VALIDATION ---
 
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     select_query = sql.SQL("""
         SELECT id, letterboxd_uri, title, year 
         FROM {table} 
-        WHERE (tmdb_id IS NULL OR poster_path IS NULL OR actors IS NULL OR directors IS NULL OR actor_profile_paths IS NULL) 
-        AND title IS NOT NULL
+        WHERE (
+            tmdb_id IS NULL OR poster_path IS NULL OR 
+            actors IS NULL OR directors IS NULL OR 
+            actor_profile_paths IS NULL OR directors_profile_paths IS NULL 
+        ) AND title IS NOT NULL
         ORDER BY id; 
     """).format(table=sql.Identifier(TABLE_NAME))
 
     try:
         cursor.execute(select_query)
         films_to_enrich = cursor.fetchall()
-        total_films_to_process = len(films_to_enrich) # Renamed for clarity
-        print(f"Found {total_films_to_process} films to enrich/update with TMDb data.")
+        total_films_to_process = len(films_to_enrich)
+        print(f"Found {total_films_to_process} films to enrich/update with TMDb data (including director profiles).")
 
         if not films_to_enrich:
             print("No films found requiring TMDb data enrichment.")
             return
         
-        updated_count = 0 
-        deleted_count = 0
-        skipped_due_to_collision = 0
+        updated_count, deleted_count, skipped_due_to_collision = 0, 0, 0
 
         for idx, film in enumerate(films_to_enrich):
             original_film_title = film['title'] 
             current_film_title_safe_for_print = safe_print_str(original_film_title)
             
-            print(f"\nProcessing ({idx + 1}/{total_films_to_process}): '{current_film_title_safe_for_print}' (Letterboxd Year: {film['year']}) - URI: {safe_print_str(film['letterboxd_uri'])}")
-            tmdb_movie_id = None
-            selected_tmdb_movie_obj = None
+            print(f"\nProcessing ({idx + 1}/{total_films_to_process}): '{current_film_title_safe_for_print}' (LB Year: {film['year']}) - URI: {safe_print_str(film['letterboxd_uri'])}")
+            tmdb_movie_id, selected_tmdb_movie_obj = None, None
             
             try:
-                # First search attempt: Title + Year (if available)
                 search_params_year = {'api_key': TMDB_API_KEY, 'query': original_film_title}
-                if film['year']:
-                    search_params_year['year'] = film['year']
+                if film['year']: search_params_year['year'] = film['year']
                 
                 response_year_search = requests.get(f"{TMDB_API_URL}/search/movie", params=search_params_year)
                 response_year_search.raise_for_status()
                 search_results_with_year = response_year_search.json().get('results', [])
                 time.sleep(API_CALL_DELAY)
-
                 selected_tmdb_movie_obj = get_closest_year_match(search_results_with_year, film['year'], original_film_title)
                 
                 if selected_tmdb_movie_obj:
                     tmdb_movie_id = selected_tmdb_movie_obj.get('id')
-                    print(f"  -> TMDb: Tentative match (year pref search): '{safe_print_str(selected_tmdb_movie_obj.get('title'))}' ({selected_tmdb_movie_obj.get('release_date')}), ID: {tmdb_movie_id}")
+                    print(f"  -> TMDb: Tentative match (year pref): '{safe_print_str(selected_tmdb_movie_obj.get('title'))}' ({selected_tmdb_movie_obj.get('release_date')}), ID: {tmdb_movie_id}")
                 
-                # Second search attempt: Title only (if first failed or film has no year for stricter first search)
                 if not selected_tmdb_movie_obj: 
-                    if film['year']: # Only print if we tried with year and it failed
-                        print(f"  -> TMDb: No strong match with year. Trying title-only search for '{current_film_title_safe_for_print}'.")
-                    
+                    if film['year']: print(f"  -> TMDb: No strong match with year. Trying title-only for '{current_film_title_safe_for_print}'.")
                     title_only_params = {'api_key': TMDB_API_KEY, 'query': original_film_title}
                     response_title_only_search = requests.get(f"{TMDB_API_URL}/search/movie", params=title_only_params)
                     response_title_only_search.raise_for_status()
                     search_results_title_only = response_title_only_search.json().get('results', [])
                     time.sleep(API_CALL_DELAY)
-                    
                     selected_tmdb_movie_obj = get_closest_year_match(search_results_title_only, film['year'], original_film_title)
                     if selected_tmdb_movie_obj:
                         tmdb_movie_id = selected_tmdb_movie_obj.get('id')
-                        print(f"  -> TMDb: Matched (title-only search, new logic): '{safe_print_str(selected_tmdb_movie_obj.get('title'))}' ({selected_tmdb_movie_obj.get('release_date')}), ID: {tmdb_movie_id}")
+                        print(f"  -> TMDb: Matched (title-only, new logic): '{safe_print_str(selected_tmdb_movie_obj.get('title'))}' ({selected_tmdb_movie_obj.get('release_date')}), ID: {tmdb_movie_id}")
                 
-                if not selected_tmdb_movie_obj: # Check after both attempts
-                    print(f"  -> TMDb: Could not find a suitable match for '{current_film_title_safe_for_print}' based on similarity and year. Deleting row from database.")
-                    delete_cursor = conn.cursor()
-                    delete_query = sql.SQL("DELETE FROM {table} WHERE letterboxd_uri = %s;").format(table=sql.Identifier(TABLE_NAME))
-                    delete_cursor.execute(delete_query, (film['letterboxd_uri'],))
-                    conn.commit()
-                    deleted_count += 1
-                    print(f"  -> DB: Deleted row for '{current_film_title_safe_for_print}' (URI: {safe_print_str(film['letterboxd_uri'])}).")
+                if not selected_tmdb_movie_obj:
+                    print(f"  -> TMDb: No suitable match for '{current_film_title_safe_for_print}'. Deleting from DB.")
+                    delete_cursor = conn.cursor(); delete_query = sql.SQL("DELETE FROM {table} WHERE letterboxd_uri = %s;").format(table=sql.Identifier(TABLE_NAME))
+                    delete_cursor.execute(delete_query, (film['letterboxd_uri'],)); conn.commit(); deleted_count += 1
+                    print(f"  -> DB: Deleted '{current_film_title_safe_for_print}' (URI: {safe_print_str(film['letterboxd_uri'])}).")
                     if delete_cursor and not delete_cursor.closed: delete_cursor.close()
                     continue 
 
-                # At this point, selected_tmdb_movie_obj is not None and tmdb_movie_id should be set
-                tmdb_id_to_insert = selected_tmdb_movie_obj.get('id') # This is now guaranteed to be from a good match
+                tmdb_id_to_insert = selected_tmdb_movie_obj.get('id')
                 
-                # Collision Check
-                if tmdb_id_to_insert:
+                if tmdb_id_to_insert: # Collision Check
                     collision_check_cursor = conn.cursor(cursor_factory=RealDictCursor)
                     collision_query = sql.SQL("SELECT letterboxd_uri FROM {table} WHERE tmdb_id = %s").format(table=sql.Identifier(TABLE_NAME))
                     collision_check_cursor.execute(collision_query, (tmdb_id_to_insert,))
-                    existing_film_with_tmdb_id = collision_check_cursor.fetchone()
+                    existing_film = collision_check_cursor.fetchone()
                     if collision_check_cursor and not collision_check_cursor.closed: collision_check_cursor.close()
-
-                    if existing_film_with_tmdb_id and existing_film_with_tmdb_id['letterboxd_uri'] != film['letterboxd_uri']:
-                        print(f"  -> COLLISION: TMDb ID {tmdb_id_to_insert} for '{current_film_title_safe_for_print}' (URI: {safe_print_str(film['letterboxd_uri'])}) "
-                              f"is already assigned to a different film (URI: {safe_print_str(existing_film_with_tmdb_id['letterboxd_uri'])}). "
-                              f"Skipping update for '{current_film_title_safe_for_print}' to avoid conflict.")
-                        skipped_due_to_collision += 1
-                        continue
+                    if existing_film and existing_film['letterboxd_uri'] != film['letterboxd_uri']:
+                        print(f"  -> COLLISION: TMDb ID {tmdb_id_to_insert} for '{current_film_title_safe_for_print}' "
+                              f"already used by URI '{safe_print_str(existing_film['letterboxd_uri'])}'. Skipping update for current film.")
+                        skipped_due_to_collision += 1; continue
                 
-                # Fetch detailed movie info
                 details_url = f"{TMDB_API_URL}/movie/{tmdb_movie_id}"
                 details_params = {'api_key': TMDB_API_KEY, 'append_to_response': 'credits'}
                 response = requests.get(details_url, params=details_params)
@@ -533,27 +421,53 @@ def enrich_films_with_tmdb_data(conn):
                 movie_details = response.json()
                 time.sleep(API_CALL_DELAY)
 
-                directors_list = []
-                actors_list = []
-                actor_profiles_list = []
+                directors_list, director_profiles_list = [], []
+                actors_list, actor_profiles_list = [], []
 
                 if 'credits' in movie_details:
+                    # Process Directors
                     if 'crew' in movie_details['credits']:
                         for crew_member in movie_details['credits']['crew']:
-                            if crew_member.get('job') == 'Director':
-                                if crew_member.get('name'):
-                                    directors_list.append(crew_member.get('name'))
+                            if crew_member.get('job') == 'Director' and crew_member.get('name'):
+                                directors_list.append(crew_member['name'])
+                                director_person_id = crew_member.get('id')
+                                director_profile_url = None
+                                if director_person_id:
+                                    try:
+                                        print(f"    Fetching profile for director: {safe_print_str(crew_member['name'])} (ID: {director_person_id})")
+                                        person_url = f"{TMDB_API_URL}/person/{director_person_id}"
+                                        person_params = {'api_key': TMDB_API_KEY}
+                                        person_response = requests.get(person_url, params=person_params)
+                                        person_response.raise_for_status() # Raise HTTPError for bad responses (4XX or 5XX)
+                                        person_details = person_response.json()
+                                        time.sleep(API_CALL_DELAY) # Delay after each person API call
+                                        
+                                        if person_details.get('profile_path'):
+                                            director_profile_url = f"{TMDB_IMAGE_BASE_URL}{TMDB_PROFILE_SIZE}{person_details['profile_path']}"
+                                            print(f"      -> Found profile path for {safe_print_str(crew_member['name'])}")
+                                        else:
+                                            print(f"      -> No profile path for {safe_print_str(crew_member['name'])}")
+                                    except requests.exceptions.HTTPError as he:
+                                        print(f"      -> TMDb API HTTP Error fetching director {safe_print_str(crew_member['name'])} (ID: {director_person_id}): {he.response.status_code if he.response else 'Unknown'}")
+                                        time.sleep(API_CALL_DELAY) # Delay even on error
+                                    except requests.exceptions.RequestException as re:
+                                        print(f"      -> TMDb API Request Error fetching director {safe_print_str(crew_member['name'])} (ID: {director_person_id}): {re}")
+                                        time.sleep(API_CALL_DELAY) # Delay even on error
+                                    except Exception as e_person:
+                                        print(f"      -> Unexpected error fetching director profile {safe_print_str(crew_member['name'])}: {e_person}")
+                                        time.sleep(API_CALL_DELAY) # Delay even on error
+                                director_profiles_list.append(director_profile_url)
+                            # Check if we have more directors than can be stored (unlikely with TEXT[] but good to be aware)
+
+                    # Process Actors
                     if 'cast' in movie_details['credits']:
                         for actor_data in movie_details['credits']['cast'][:TOP_N_ACTORS]: 
                             if actor_data.get('name'): 
-                                actors_list.append(actor_data.get('name'))
-                                if actor_data.get('profile_path'):
-                                    actor_profiles_list.append(f"{TMDB_IMAGE_BASE_URL}{TMDB_PROFILE_SIZE}{actor_data.get('profile_path')}")
-                                else:
-                                    actor_profiles_list.append(None) # Or a placeholder URL
-                            else: # If actor name is missing, but we need to keep arrays parallel
-                                actor_profiles_list.append(None)
-
+                                actors_list.append(actor_data['name'])
+                                actor_profile_path = actor_data.get('profile_path')
+                                actor_profiles_list.append(f"{TMDB_IMAGE_BASE_URL}{TMDB_PROFILE_SIZE}{actor_profile_path}" if actor_profile_path else None)
+                            else:
+                                actor_profiles_list.append(None) # Maintain parallelism
 
                 poster_path = movie_details.get('poster_path')
                 backdrop_path = movie_details.get('backdrop_path')
@@ -563,15 +477,14 @@ def enrich_films_with_tmdb_data(conn):
                 release_date = None
                 if release_date_str:
                     try:
-                        datetime.strptime(release_date_str, '%Y-%m-%d') 
-                        release_date = release_date_str
-                    except ValueError:
-                        print(f"  -> TMDb: Invalid release date format '{safe_print_str(release_date_str)}'. Skipping date.")
+                        datetime.strptime(release_date_str, '%Y-%m-%d'); release_date = release_date_str
+                    except ValueError: print(f"  -> TMDb: Invalid release date format '{safe_print_str(release_date_str)}'. Skipping.")
 
                 update_cursor = conn.cursor()
                 update_query = sql.SQL("""
                     UPDATE {table} SET
-                        tmdb_id = %s, directors = %s, actors = %s, actor_profile_paths = %s,
+                        tmdb_id = %s, directors = %s, directors_profile_paths = %s, 
+                        actors = %s, actor_profile_paths = %s,
                         poster_path = %s, backdrop_path = %s, runtime = %s,
                         genres = %s, release_date = %s, updated_at = NOW()
                     WHERE letterboxd_uri = %s;
@@ -580,45 +493,31 @@ def enrich_films_with_tmdb_data(conn):
                 update_cursor.execute(update_query, (
                     tmdb_movie_id, 
                     directors_list if directors_list else None, 
+                    director_profiles_list if director_profiles_list else None,
                     actors_list if actors_list else None, 
                     actor_profiles_list if actor_profiles_list else None,
-                    poster_path,
-                    backdrop_path, runtime, genres_list if genres_list else None,
+                    poster_path, backdrop_path, runtime, genres_list if genres_list else None,
                     release_date, film['letterboxd_uri']
                 ))
-                conn.commit()
-                updated_count +=1
-                print(f"  -> DB: Successfully updated '{current_film_title_safe_for_print}' with TMDb ID {tmdb_movie_id}, {len(directors_list)} Director(s), {len(actors_list)} Actors with profile paths.")
+                conn.commit(); updated_count +=1
+                print(f"  -> DB: Updated '{current_film_title_safe_for_print}' (TMDb ID {tmdb_movie_id}) with {len(directors_list)} Director(s) (profiles: {sum(1 for p in director_profiles_list if p)}) and {len(actors_list)} Actor(s).")
                 if update_cursor and not update_cursor.closed: update_cursor.close()
 
             except requests.exceptions.HTTPError as e:
-                error_message = f"No response text (status code: {e.response.status_code if e.response else 'Unknown'})"
-                if e.response and hasattr(e.response, 'text') and e.response.text:
-                    error_message = safe_print_str(e.response.text)
-                print(f"  -> TMDb API HTTP Error for '{current_film_title_safe_for_print}': {e.response.status_code if e.response else 'Unknown status'} - {error_message}")
-                if e.response and e.response.status_code == 404: 
-                    print(f"  -> TMDb: Movie ID {tmdb_movie_id if tmdb_movie_id else '(unknown from search)'} not found (404) when fetching details.")
+                error_msg = safe_print_str(e.response.text if e.response and hasattr(e.response, 'text') else 'No response text')
+                print(f"  -> TMDb API HTTP Error for '{current_film_title_safe_for_print}': {e.response.status_code if e.response else 'N/A'} - {error_msg}")
+                if e.response and e.response.status_code == 404: print(f"  -> TMDb: Movie ID {tmdb_movie_id if tmdb_movie_id else '(unknown)'} not found (404).")
                 time.sleep(API_CALL_DELAY) 
-            except requests.exceptions.RequestException as e:
-                print(f"  -> TMDb API Request Error for '{current_film_title_safe_for_print}': {e}")
-                time.sleep(API_CALL_DELAY) 
-            except psycopg2.Error as e: 
-                print(f"  -> DB Update/Delete Error for '{current_film_title_safe_for_print}': {e}")
-                if conn and not conn.closed: conn.rollback() 
-            except Exception as e: 
-                print(f"  -> Unexpected error processing '{current_film_title_safe_for_print}': {type(e).__name__} - {e}")
-                import traceback
-                traceback.print_exc() # For detailed debugging of unexpected errors
+            except requests.exceptions.RequestException as e: print(f"  -> TMDb API Request Error for '{current_film_title_safe_for_print}': {e}"); time.sleep(API_CALL_DELAY) 
+            except psycopg2.Error as e: print(f"  -> DB Update/Delete Error for '{current_film_title_safe_for_print}': {e}"); conn.rollback() 
+            except Exception as e: print(f"  -> Unexpected error for '{current_film_title_safe_for_print}': {type(e).__name__} - {e}"); import traceback; traceback.print_exc()
 
+        print(f"\nFinished TMDb enrichment. Updated: {updated_count}, Deleted: {deleted_count}, Skipped (Collision): {skipped_due_to_collision}, Total Processed: {total_films_to_process}.")
 
-        print(f"\nFinished TMDb data enrichment process. Updated: {updated_count}, Deleted: {deleted_count}, Skipped (Collision): {skipped_due_to_collision}, Total Processed in this run: {total_films_to_process}.")
-
-
-    except psycopg2.Error as e: # This will catch the original error if schema validation wasn't present or if it's a different DB error
-        print(f"Database error during film selection or processing: {e}")
-        if hasattr(e, 'diag') and e.diag.message_primary:
-             print(f"PostgreSQL Primary Error: {e.diag.message_primary}")
-        if conn and not conn.closed: conn.rollback() 
+    except psycopg2.Error as e:
+        print(f"DB error during film selection: {e}")
+        if hasattr(e, 'diag') and e.diag.message_primary: print(f"PostgreSQL Primary Error: {e.diag.message_primary}")
+        conn.rollback() 
     finally:
         if cursor and not cursor.closed : cursor.close()
 
@@ -626,36 +525,27 @@ def enrich_films_with_tmdb_data(conn):
 # --- Main Execution ---
 if __name__ == "__main__":
     db_connection = None
-
     if sys.platform == "win32":
         try:
             sys.stdout.reconfigure(encoding='utf-8', errors='replace')
             sys.stderr.reconfigure(encoding='utf-8', errors='replace')
             print("Attempted to reconfigure stdout/stderr to UTF-8.")
-        except Exception as e_reconfigure:
-            print(f"Note: Could not reconfigure stdout/stderr to UTF-8: {e_reconfigure}")
-            try:
-                os.system("chcp 65001 > nul")
-                print("Attempted to set console to UTF-8 via chcp 65001 (fallback).")
-            except Exception as e_chcp:
-                print(f"Note: Could not set console to UTF-8 via chcp: {e_chcp}")
-
-
+        except Exception as e: print(f"Note: Could not reconfigure stdout/stderr: {e}")
+        try:
+            os.system("chcp 65001 > nul"); print("Attempted chcp 65001.")
+        except Exception as e: print(f"Note: chcp 65001 failed: {e}")
     try:
         db_connection = connect_db()
         if db_connection:
             print("\n--- Ensuring Table Schema ---")
             create_table_if_not_exists(db_connection)
             print("--- Table Schema Checked ---\n")
-
             print("\n--- Starting CSV Processing (Optional) ---")
-            # process_csv_and_insert_data(db_connection, CSV_FILE_PATH) # Uncomment if needed
+            # process_csv_and_insert_data(db_connection, CSV_FILE_PATH) # Uncomment if needed for initial load or update from CSV
             print("--- Finished CSV Processing (or skipped) ---\n")
-
             print("--- Starting TMDb Enrichment ---")
             enrich_films_with_tmdb_data(db_connection)
             print("--- Finished TMDb Enrichment ---")
-
     finally:
         if db_connection and not db_connection.closed:
             db_connection.close()
