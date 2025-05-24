@@ -3,105 +3,113 @@
 document.addEventListener('DOMContentLoaded', () => {
     const fullscreenOverlay = document.getElementById('fullscreenOverlay');
     const fullscreenChartHost = document.getElementById('fullscreenChartHost');
-    
+
     const fullscreenCanvasContainer = fullscreenChartHost.querySelector('.fullscreen-canvas-container');
     const fullscreenCanvas = document.getElementById('fullscreenCanvas');
-    const fullscreenGenericContentHost = document.getElementById('fullscreenGenericContentHost'); 
+    const fullscreenGenericContentHost = document.getElementById('fullscreenGenericContentHost');
 
     const closeFullscreenBtn = document.getElementById('closeFullscreenBtn');
     const fullscreenBtns = document.querySelectorAll('.fullscreen-btn');
 
     let fullscreenChartInstance = null;
-    let currentFullscreenType = null; 
+    let currentFullscreenType = null;
     let currentFullscreenTargetId = null;
+
+    // Placeholder URLs for fullscreen credit lists - replace with actuals if needed
+    const FULLSCREEN_DIRECTOR_PLACEHOLDER_URL = 'https://via.placeholder.com/180x270.png?text=No+Profile';
+    const FULLSCREEN_ACTOR_PLACEHOLDER_URL = 'https://via.placeholder.com/180x270.png?text=No+Profile';
+
+    // Helper function to render a list of credits (actors/directors)
+    function renderCreditsListFullscreen(credits, container, placeholderUrl) {
+        container.innerHTML = ''; // Clear previous content
+        if (!credits || credits.length === 0) {
+            container.innerHTML = `<p class="text-muted text-center w-100">No data found.</p>`;
+            return;
+        }
+
+        credits.forEach(credit => {
+            const card = document.createElement('div');
+            card.className = 'credit-card'; // Uses styles from style.css
+            card.title = `${credit.name} - ${credit.filmCount} film${credit.filmCount !== 1 ? 's' : ''}`;
+
+            const profileImageUrl = credit.profilePath || placeholderUrl;
+
+            const imageElement = document.createElement('img');
+            imageElement.className = 'credit-profile-image';
+            imageElement.src = profileImageUrl;
+            imageElement.alt = `Profile of ${credit.name}`;
+            imageElement.onerror = function() {
+                this.onerror = null;
+                this.src = placeholderUrl;
+                this.alt = 'Placeholder image';
+            };
+
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'credit-info';
+
+            const filmCountP = document.createElement('p');
+            filmCountP.className = 'credit-film-count';
+            filmCountP.textContent = `${credit.filmCount} film${credit.filmCount !== 1 ? 's' : ''}`;
+
+            const nameElement = document.createElement('p');
+            nameElement.className = 'credit-name';
+            nameElement.textContent = credit.name;
+
+            infoDiv.appendChild(filmCountP);
+            infoDiv.appendChild(nameElement);
+
+            card.appendChild(imageElement);
+            card.appendChild(infoDiv);
+            container.appendChild(card);
+        });
+    }
+
 
     async function enterFullscreen(buttonElement) {
         const targetId = buttonElement.dataset.targetId;
-        const type = buttonElement.dataset.type || 'chart'; 
+        // TopDirectorsChart and TopActorsChart are now generic lists, not charts
+        // Their containers are topDirectorsContainer and topActorsContainer
+        let type = buttonElement.dataset.type || 'chart';
+        if (targetId === 'topDirectorsContainer' || targetId === 'topActorsContainer') {
+            type = 'generic'; // Override type for these new list displays
+        }
+
 
         fullscreenCanvasContainer.classList.add('hidden');
         if (fullscreenChartInstance) {
             fullscreenChartInstance.destroy();
             fullscreenChartInstance = null;
         }
-        fullscreenGenericContentHost.innerHTML = ''; 
+        fullscreenGenericContentHost.innerHTML = '';
         fullscreenGenericContentHost.classList.add('hidden');
 
         currentFullscreenType = type;
         currentFullscreenTargetId = targetId;
 
         if (type === 'chart') {
-            const originalChartInstance = Chart.getChart(targetId); 
+            // This section now handles only actual charts like MoviesByReleaseYear, MoviesByGenrePie, MoviesWatchedOverTime
+            const originalChartInstance = Chart.getChart(targetId);
 
             if (!originalChartInstance) {
                 console.error('Original chart instance not found for ID:', targetId);
-                exitFullscreen(); 
+                exitFullscreen();
                 return;
             }
 
-            let dataForFullscreen;
-            // Ensure originalChartInstance.config.options exists, default to empty object if not
+            let dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
             let optionsForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.options || {}));
 
-            // Initialize/ensure scales object and its sub-properties exist for bar/line charts
-            // This will be cleaned up later for pie/doughnut charts
+            // Initialize/ensure scales object and its sub-properties exist
             optionsForFullscreen.scales = optionsForFullscreen.scales || {};
             optionsForFullscreen.scales.x = optionsForFullscreen.scales.x || {};
-            optionsForFullscreen.scales.x.title = optionsForFullscreen.scales.x.title || {}; 
+            optionsForFullscreen.scales.x.title = optionsForFullscreen.scales.x.title || {};
             optionsForFullscreen.scales.y = optionsForFullscreen.scales.y || {};
             optionsForFullscreen.scales.y.title = optionsForFullscreen.scales.y.title || {};
+            optionsForFullscreen.scales.y.ticks = optionsForFullscreen.scales.y.ticks || {color: '#9ca3af'};
+            optionsForFullscreen.scales.y.ticks.display = true;
+            optionsForFullscreen.scales.x.ticks = optionsForFullscreen.scales.x.ticks || {color: '#9ca3af'};
+            optionsForFullscreen.scales.x.ticks.display = true;
 
-            if (targetId === 'TopDirectorsChart') {
-                try {
-                    const response = await fetch('/api/top-directors?limit=25');
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error(`API Error fetching top 25 directors: ${response.status} ${errorText}`);
-                        dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
-                    } else {
-                        dataForFullscreen = await response.json();
-                        if (optionsForFullscreen.plugins?.title) {
-                            optionsForFullscreen.plugins.title.text = 'Top 25 Directors by Film Count';
-                        } else {
-                            optionsForFullscreen.plugins = optionsForFullscreen.plugins || {};
-                            optionsForFullscreen.plugins.title = { display: true, text: 'Top 25 Directors by Film Count', color: '#f3f4f6', font: {size: 16} };
-                        }
-                    }
-                    optionsForFullscreen.scales.y.ticks = optionsForFullscreen.scales.y.ticks || {color: '#9ca3af'};
-                    optionsForFullscreen.scales.y.ticks.display = true;
-                    optionsForFullscreen.scales.x.ticks = optionsForFullscreen.scales.x.ticks || {color: '#9ca3af'};
-                    optionsForFullscreen.scales.x.ticks.display = true;
-                } catch (fetchError) {
-                    console.error('Error fetching top 25 directors data:', fetchError);
-                    dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
-                }
-            } else if (targetId === 'TopActorsChart') {
-                try {
-                    const response = await fetch('/api/top-actors?limit=25');
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error(`API Error fetching top 25 actors: ${response.status} ${errorText}`);
-                        dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
-                    } else {
-                        dataForFullscreen = await response.json();
-                        if (optionsForFullscreen.plugins?.title) {
-                            optionsForFullscreen.plugins.title.text = 'Top 25 Actors by Film Count';
-                        } else {
-                             optionsForFullscreen.plugins = optionsForFullscreen.plugins || {};
-                             optionsForFullscreen.plugins.title = { display: true, text: 'Top 25 Actors by Film Count', color: '#f3f4f6', font: {size: 16} };
-                        }
-                    }
-                    optionsForFullscreen.scales.y.ticks = optionsForFullscreen.scales.y.ticks || {color: '#9ca3af'};
-                    optionsForFullscreen.scales.y.ticks.display = true;
-                    optionsForFullscreen.scales.x.ticks = optionsForFullscreen.scales.x.ticks || {color: '#9ca3af'};
-                    optionsForFullscreen.scales.x.ticks.display = true;
-                } catch (fetchError) {
-                    console.error('Error fetching top 25 actors data:', fetchError);
-                    dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
-                }
-            } else {
-                dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
-            }
 
             const chartConfig = {
                 type: originalChartInstance.config.type,
@@ -109,26 +117,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 options: {
                     ...optionsForFullscreen,
                     animation: false,
-                    maintainAspectRatio: false, // Ensure fullscreen chart can resize freely
+                    maintainAspectRatio: false,
                     responsive: true,
                 }
             };
 
-            // START FIX: Remove scales for pie/doughnut charts
             if (chartConfig.type === 'pie' || chartConfig.type === 'doughnut') {
                 if (chartConfig.options.scales) {
                     delete chartConfig.options.scales;
                 }
             }
-            // END FIX
 
-            // Specific legend handling for MoviesByGenrePieChart (assuming it's a pie or doughnut)
-            if (targetId === 'MoviesByGenrePieChart') { // You can also combine with chartConfig.type check if needed
+            if (targetId === 'MoviesByGenrePieChart') {
                 chartConfig.options.plugins = chartConfig.options.plugins || {};
                 chartConfig.options.plugins.legend = chartConfig.options.plugins.legend || {};
                 const existingLabelOptions = chartConfig.options.plugins.legend.labels || {};
                 chartConfig.options.plugins.legend = {
-                    ...(chartConfig.options.plugins.legend), // Preserve other legend settings
+                    ...(chartConfig.options.plugins.legend),
                     display: true,
                     position: 'top',
                     align: 'center',
@@ -142,55 +147,83 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 };
             }
-            
+
             const ctx = fullscreenCanvas.getContext('2d');
             fullscreenChartInstance = new Chart(ctx, chartConfig);
             fullscreenCanvasContainer.classList.remove('hidden');
 
         } else if (type === 'generic') {
-            // ... (generic content logic remains the same) ...
-            fullscreenGenericContentHost.innerHTML = ''; 
+            fullscreenGenericContentHost.innerHTML = ''; // Clear previous
+
+            // Create common wrapper structure for generic content
+            const header = document.createElement('h3');
+            header.className = 'fullscreen-generic-header';
+            fullscreenGenericContentHost.appendChild(header);
+
+            const gridWrapper = document.createElement('div');
+            gridWrapper.className = 'fullscreen-cloned-content-wrapper';
+            fullscreenGenericContentHost.appendChild(gridWrapper);
+
+            let contentGridElement; // This will hold the actual grid
 
             if (targetId === 'mostRewatchedMoviesContainer' && typeof window.MyAppGlobal?.fetchAndDisplayMostRewatched === 'function') {
-                
-                const header = document.createElement('h3');
-                header.className = 'fullscreen-generic-header';
-                header.textContent = 'Most Rewatched Movies'; 
-                fullscreenGenericContentHost.appendChild(header);
+                header.textContent = 'Most Rewatched Movies (Top 14)';
+                contentGridElement = document.createElement('div');
+                contentGridElement.className = 'rewatched-movies-grid'; // Use specific class
+                gridWrapper.appendChild(contentGridElement);
 
-                const gridWrapper = document.createElement('div');
-                gridWrapper.className = 'fullscreen-cloned-content-wrapper'; 
-                fullscreenGenericContentHost.appendChild(gridWrapper);
-
-                const fullscreenMovieGrid = document.createElement('div');
-                fullscreenMovieGrid.className = 'rewatched-movies-grid'; 
-                gridWrapper.appendChild(fullscreenMovieGrid);
-                
                 window.MyAppGlobal.fetchAndDisplayMostRewatched(
-                    14, 
-                    fullscreenMovieGrid, 
-                    'w342'
+                    14,
+                    contentGridElement,
+                    'w342' // Larger poster size for fullscreen
                 );
-                fullscreenGenericContentHost.classList.remove('hidden');
 
-            } else {
+            } else if (targetId === 'topDirectorsContainer') {
+                header.textContent = 'Top Directors (Top 20)';
+                contentGridElement = document.createElement('div');
+                contentGridElement.className = 'credits-grid'; // Use specific class
+                gridWrapper.appendChild(contentGridElement);
+
+                try {
+                    const response = await fetch('/api/top-directors?limit=20');
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                    const directorsData = await response.json();
+                    renderCreditsListFullscreen(directorsData, contentGridElement, FULLSCREEN_DIRECTOR_PLACEHOLDER_URL);
+                } catch (err) {
+                    console.error('Error fetching/rendering top directors for fullscreen:', err);
+                    contentGridElement.innerHTML = `<p class="text-danger text-center w-100">Error loading directors.</p>`;
+                }
+
+            } else if (targetId === 'topActorsContainer') {
+                header.textContent = 'Top Actors (Top 20)';
+                contentGridElement = document.createElement('div');
+                contentGridElement.className = 'credits-grid'; // Use specific class
+                gridWrapper.appendChild(contentGridElement);
+
+                try {
+                    const response = await fetch('/api/top-actors?limit=20');
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                    const actorsData = await response.json();
+                    renderCreditsListFullscreen(actorsData, contentGridElement, FULLSCREEN_ACTOR_PLACEHOLDER_URL);
+                } catch (err) {
+                    console.error('Error fetching/rendering top actors for fullscreen:', err);
+                    contentGridElement.innerHTML = `<p class="text-danger text-center w-100">Error loading actors.</p>`;
+                }
+
+            } else { // Fallback for other generic content (if any)
+                header.textContent = 'Fullscreen View'; // Generic title
                 const originalContentElement = document.getElementById(targetId);
                 if (originalContentElement) {
-                    const contentWrapper = document.createElement('div');
-                    contentWrapper.className = 'fullscreen-cloned-content-wrapper'; 
-                    
                     const clonedContent = originalContentElement.cloneNode(true);
-                    clonedContent.removeAttribute('id'); 
-                    
-                    contentWrapper.appendChild(clonedContent);
-                    fullscreenGenericContentHost.appendChild(contentWrapper);
-                    fullscreenGenericContentHost.classList.remove('hidden');
+                    clonedContent.removeAttribute('id');
+                    gridWrapper.appendChild(clonedContent); // Add cloned content to the wrapper
                 } else {
                     console.error('Original generic content element not found for ID:', targetId);
-                    exitFullscreen(); 
-                    return;
+                    header.textContent = 'Error: Content not found';
+                    gridWrapper.innerHTML = `<p class="text-danger text-center w-100">Content not found.</p>`;
                 }
             }
+            fullscreenGenericContentHost.classList.remove('hidden');
         } else {
             console.error('Unknown fullscreen type or missing target ID.');
             exitFullscreen();
@@ -207,15 +240,15 @@ document.addEventListener('DOMContentLoaded', () => {
             fullscreenChartInstance.destroy();
             fullscreenChartInstance = null;
         } else if (currentFullscreenType === 'generic') {
-            fullscreenGenericContentHost.innerHTML = ''; 
+            fullscreenGenericContentHost.innerHTML = '';
         }
 
         fullscreenOverlay.classList.add('hidden');
         fullscreenChartHost.classList.add('hidden');
-        
+
         fullscreenCanvasContainer.classList.add('hidden');
         fullscreenGenericContentHost.classList.add('hidden');
-        
+
         document.body.classList.remove('fullscreen-active');
         currentFullscreenType = null;
         currentFullscreenTargetId = null;
@@ -223,12 +256,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     fullscreenBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            enterFullscreen(btn); 
+            enterFullscreen(btn);
         });
     });
 
     closeFullscreenBtn.addEventListener('click', exitFullscreen);
-    fullscreenOverlay.addEventListener('click', exitFullscreen); 
+    fullscreenOverlay.addEventListener('click', exitFullscreen);
 
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && !fullscreenChartHost.classList.contains('hidden')) {

@@ -91,27 +91,37 @@
                 <div id="GenreChartErrorMessage" class="error-message hidden mt-2"></div>
             </div>
 
-            <!-- Column for Stacked Charts: Directors and Actors -->
+            <!-- Column for Top Directors and Actors Lists -->
             <div class="col-md-3 d-flex flex-column">
-                <!-- Chart 3: Top Directors -->
-                <div class="chart-container bar-chart-container mb-4">
-                    <button class="fullscreen-btn" data-target-id="TopDirectorsChart" data-type="chart" aria-label="Toggle fullscreen for Top Directors chart">↗</button>
-                    <canvas id="TopDirectorsChart"></canvas>
+                <!-- Section 3: Top Directors List -->
+                <div class="credits-list-container mb-4">
+                    <button class="fullscreen-btn" data-target-id="topDirectorsContainer" data-type="generic" aria-label="Toggle fullscreen for Top Directors">↗</button>
+                    <div class="credits-list-header">
+                        <h3>Top Directors</h3>
+                    </div>
+                    <div id="topDirectorsContainer" class="credits-grid">
+                        <!-- Director cards will be injected here by JavaScript -->
+                    </div>
+                    <div id="topDirectorsErrorMessage" class="error-message hidden mt-2"></div>
                 </div>
-                <div id="TopDirectorsChartErrorMessage" class="error-message hidden mt-2 mb-2"></div>
 
-                <!-- Chart 4: Top Actors -->
-                <div class="chart-container bar-chart-container">
-                    <button class="fullscreen-btn" data-target-id="TopActorsChart" data-type="chart" aria-label="Toggle fullscreen for Top Actors chart">↗</button>
-                    <canvas id="TopActorsChart"></canvas>
+                <!-- Section 4: Top Actors List -->
+                <div class="credits-list-container">
+                    <button class="fullscreen-btn" data-target-id="topActorsContainer" data-type="generic" aria-label="Toggle fullscreen for Top Actors">↗</button>
+                    <div class="credits-list-header">
+                        <h3>Top Actors</h3>
+                    </div>
+                    <div id="topActorsContainer" class="credits-grid">
+                        <!-- Actor cards will be injected here by JavaScript -->
+                    </div>
+                    <div id="topActorsErrorMessage" class="error-message hidden mt-2"></div>
                 </div>
-                <div id="TopActorsChartErrorMessage" class="error-message hidden mt-2"></div>
             </div>
         </div>
 
-        <!-- Most Rewatched Movies Row -->
+        <!-- Most Rewatched Movies Row & Movies Watched Over Time Chart Row -->
         <div class="row g-4 mb-4">
-            <div class="col-12 col-lg-6"> <!-- Takes full width on smaller screens, half on large -->
+            <div class="col-12 col-lg-6 d-flex flex-column"> <!-- Takes full width on smaller screens, half on large -->
                 <div class="movie-list-container"> 
                     <button class="fullscreen-btn" data-target-id="mostRewatchedMoviesContainer" data-type="generic" aria-label="Toggle fullscreen for Most Rewatched Movies">↗</button>
                     <div class="movie-list-header">
@@ -124,14 +134,13 @@
                 </div>
             </div>
             <!-- Chart: Movies Watched Over Time Chart -->
-            <div class="col-md-3 d-flex flex-column">
+            <div class="col-12 col-lg-3 d-flex flex-column"> 
                 <div class="chart-container bar-chart-container">
-                    <button class="fullscreen-btn" data-target-id="MoviesWatchedOverTimeChart" data-type="chart" aria-label="Toggle fullscreen for Release Year chart">↗</button>
+                    <button class="fullscreen-btn" data-target-id="MoviesWatchedOverTimeChart" data-type="chart" aria-label="Toggle fullscreen for Movies Watched Over Time chart">↗</button>
                     <canvas id="MoviesWatchedOverTimeChart"></canvas>
                 </div>
                 <div id="MoviesWatchedOverTimeChartErrorMessage" class="error-message hidden mt-2"></div>
             </div>
-            <!-- Add other content to this row if needed, e.g., another col-lg-6 -->
         </div>
 
     </div>
@@ -146,13 +155,12 @@
         <div id="fullscreenGenericContentHost" class="fullscreen-generic-content-container hidden"> 
             <!-- Cloned generic content will go here -->
         </div>
-        <!-- ... (rest of your HTML) ... -->
     </div>
     <!-- ... (scripts) ... -->
     <script src="/MoviesByReleaseYearChart.js" defer></script>
     <script src="/MoviesByGenrePieChart.js" defer></script>
-    <script src="/TopDirectorsChart.js" defer></script>
-    <script src="/TopActorsChart.js" defer></script>
+    <script src="/TopDirectorsChart.js" defer></script> <!-- Keep name, content changed -->
+    <script src="/TopActorsChart.js" defer></script>   <!-- Keep name, content changed -->
     <script src="/fullscreenChart.js" defer></script>
     <script src="/statsLoader.js" defer></script>
     <script src="/mostRewatchedMovies.js" defer></script>

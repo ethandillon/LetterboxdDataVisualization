@@ -1,106 +1,88 @@
-// TopDirectorsChart.js
-// No 'import Chart from ...' line needed. Chart is global.
-// No 'import ... from ./chartConfig.js'. MyAppCharts is global if needed, but defaults are applied.
+// TopDirectorsChart.js (Now functions as TopDirectorsList.js)
 
-let topDirectorsChartInstance = null;
+// Constants for image display
+// IMPORTANT: Replace with an actual URL to a 2:3 aspect ratio rectangular placeholder
+const DIRECTOR_PLACEHOLDER_IMAGE_URL = 'https://via.placeholder.com/180x270.png?text=No+Profile';
 
-async function renderTopDirectorsChart() {
-    const errorMessageDiv = document.getElementById('TopDirectorsChartErrorMessage');
-    const canvasElement = document.getElementById('TopDirectorsChart');
+async function renderTopDirectorsList() {
+    const containerElement = document.getElementById('topDirectorsContainer');
+    const errorMessageDiv = document.getElementById('topDirectorsErrorMessage');
 
-    if (!canvasElement) {
-        console.error("Canvas element 'TopDirectorsChart' not found.");
+    if (!containerElement) {
+        console.error("Container element 'topDirectorsContainer' not found.");
         if (errorMessageDiv) {
-            errorMessageDiv.textContent = "Chart canvas for Top Directors not found.";
+            errorMessageDiv.textContent = "Display area for Top Directors not found.";
             errorMessageDiv.classList.remove('hidden');
         }
         return;
     }
-    const ctx = canvasElement.getContext('2d');
 
-    // Destroy existing chart instance if it exists
-    if (typeof Chart !== 'undefined' && Chart.getChart) {
-        const existingChartOnCanvas = Chart.getChart(canvasElement);
-        if (existingChartOnCanvas) {
-            existingChartOnCanvas.destroy();
-        }
-    }
-    if (topDirectorsChartInstance) {
-        topDirectorsChartInstance.destroy();
-        topDirectorsChartInstance = null;
-    }
+    containerElement.innerHTML = '';
+    if (errorMessageDiv) errorMessageDiv.classList.add('hidden');
 
     try {
-        // Fetch data for top 5 directors for initial display
-        const response = await fetch('/api/top-directors?limit=5'); // Fetch only top 5
+        const response = await fetch('/api/top-directors?limit=5');
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`API Error: ${response.status} ${errorText || response.statusText}`);
         }
-        const chartData = await response.json(); // Contains data for top 5
-        if (!chartData || !chartData.labels || !chartData.datasets) {
-            throw new Error('Invalid chart data for Top 5 Directors from API.');
+        const directors = await response.json();
+
+        if (!directors || !Array.isArray(directors)) {
+            throw new Error('Invalid data format for Top Directors from API.');
         }
 
+        if (directors.length === 0) {
+            containerElement.innerHTML = `<p class="text-muted text-center w-100" style="grid-column: 1 / -1;">No top directors found.</p>`;
+            return;
+        }
 
-        topDirectorsChartInstance = new Chart(ctx, {
-            type: 'bar', // Or 'pie', 'doughnut', 'horizontalBar' if you prefer
-            data: chartData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, // Adjust as needed
-                scales: {
-                    x: {
-                        title: {
-                            display: false,
-                            text: 'Director'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: false,
-                            text: 'Number of Films'
-                        },
-                        beginAtZero: true,
-                        ticks: {
-                            // Ensure y-axis ticks are integers if dealing with counts
-                            precision: 0
-                        }
-                    }
-                },
-                plugins: {
-                    title: {
-                        display: true,
-                        text: "Top 5 Directors by Film Count"
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) { label += ': '; }
-                                if (context.parsed.y !== null) {
-                                    label += context.parsed.y + (context.parsed.y === 1 ? ' film' : ' films');
-                                }
-                                return label;
-                            }
-                        }
-                    },
-                    legend: {
-                        // Hide legend if there's only one dataset and the title is clear
-                        display: chartData.datasets.length > 1
-                    }
-                }
-            }
+        directors.forEach(director => {
+            const card = document.createElement('div');
+            card.className = 'credit-card';
+            card.title = `${director.name} - ${director.filmCount} film${director.filmCount !== 1 ? 's' : ''}`;
+
+            const profileImageUrl = director.profilePath || DIRECTOR_PLACEHOLDER_IMAGE_URL;
+
+            const imageElement = document.createElement('img');
+            imageElement.className = 'credit-profile-image'; // Styled like a poster
+            imageElement.src = profileImageUrl;
+            imageElement.alt = `Profile of ${director.name}`;
+            imageElement.onerror = function() {
+                this.onerror = null;
+                this.src = DIRECTOR_PLACEHOLDER_IMAGE_URL;
+                this.alt = 'Placeholder image';
+            };
+
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'credit-info'; // Matches movie-card's info section
+
+            const filmCountP = document.createElement('p');
+            filmCountP.className = 'credit-film-count'; // For film count
+            filmCountP.textContent = `${director.filmCount} film${director.filmCount !== 1 ? 's' : ''}`;
+
+            const nameElement = document.createElement('p');
+            nameElement.className = 'credit-name'; // For the director's name
+            nameElement.textContent = director.name;
+
+            infoDiv.appendChild(filmCountP); // Typically film count/rewatches first
+            infoDiv.appendChild(nameElement);
+
+            card.appendChild(imageElement);
+            card.appendChild(infoDiv);
+            containerElement.appendChild(card);
         });
-        if (errorMessageDiv) errorMessageDiv.classList.add('hidden');
+
     } catch (error) {
-        console.error('Error rendering Top Directors chart:', error);
+        console.error('Error rendering Top Directors list:', error);
         if (errorMessageDiv) {
-            errorMessageDiv.textContent = `Could not load Top Directors chart: ${error.message}`;
+            errorMessageDiv.textContent = `Could not load Top Directors: ${error.message}`;
             errorMessageDiv.classList.remove('hidden');
+        }
+        if (containerElement) {
+            containerElement.innerHTML = `<p class="text-danger text-center w-100" style="grid-column: 1 / -1;">Error loading directors.</p>`;
         }
     }
 }
 
-// Call the function to render the chart when the script loads
-renderTopDirectorsChart();
+document.addEventListener('DOMContentLoaded', renderTopDirectorsList);

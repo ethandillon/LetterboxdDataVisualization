@@ -13,7 +13,8 @@ body.fullscreen-active {
 }
 
 .chart-container,
-.movie-list-container { /* Added .movie-list-container here */
+.movie-list-container,
+.credits-list-container {
     background-color: #1f2937;
     padding: 20px;
     border-radius: 12px;
@@ -31,6 +32,11 @@ body.fullscreen-active {
 .pie-chart-container {
     height: 20vh;
 }
+
+.credits-list-container {
+    min-height: 18vh;
+}
+
 
 .chart-container canvas {
     display: block;
@@ -67,7 +73,7 @@ a:hover{
     text-decoration: underline;
 }
 
-a:visted{
+a:visited{
     color:gray;
     background-color: transparent;
 }
@@ -79,6 +85,7 @@ a:visted{
     padding: 10px 15px;
     border-radius: 8px;
     text-align: center;
+    margin-top: 8px;
 }
 
 .hidden {
@@ -86,14 +93,14 @@ a:visted{
 }
 
 .stat-box {
-    background-color: #1f2937; /* Same as chart-container */
-    padding: 20px 25px; /* Added more horizontal padding */
+    background-color: #1f2937;
+    padding: 20px 25px;
     border-radius: 12px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 100%; /* Ensures all boxes in a row have same height if using d-flex on parent row */
+    height: 100%;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
@@ -103,15 +110,15 @@ a:visted{
 }
 
 .stat-box-link {
-    display: flex; /* Use flex to arrange content and icon side-by-side */
+    display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 25px; /* Original padding now on the link */
+    padding: 20px 25px;
     width: 100%;
     height: 100%;
-    text-decoration: none; /* Remove underline from link */
-    color: inherit; /* Inherit text color from parent, prevents default blue */
-    border-radius: 12px; /* Ensure the link also has rounded corners if it's the clickable area */
+    text-decoration: none;
+    color: inherit;
+    border-radius: 12px;
 }
 
 .stat-box:hover {
@@ -129,95 +136,115 @@ a:visted{
 }
 
 .stat-box-title {
-    font-size: 0.8rem; /* Slightly smaller title */
-    color: #9ca3af; /* Lighter gray for title */
-    margin-bottom: 6px; /* Adjusted margin */
+    font-size: 0.8rem;
+    color: #9ca3af;
+    margin-bottom: 6px;
     font-weight: 600;
-    text-transform: uppercase; /* As per Bootstrap example */
+    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .stat-box-value {
-    font-size: 2rem; /* Larger value */
+    font-size: 2rem;
     font-weight: 700;
-    color: #f3f4f6; /* White text for value */
-    margin-bottom: 0px; /* Reduced margin */
+    color: #f3f4f6;
+    margin-bottom: 0px;
     line-height: 1.2;
 }
 
 .stat-box-subtext {
     font-size: 0.75rem;
-    color: #6b7280; /* Darker gray for subtext */
+    color: #6b7280;
     margin-top: 4px;
 }
 
 .stat-box-subtext.positive {
-    color: #10b981; /* Green */
+    color: #10b981;
 }
 .stat-box-subtext.negative {
-    color: #ef4444; /* Red */
+    color: #ef4444;
 }
 
 .stat-box-icon {
-    padding-left: 20px; /* Space between content and icon */
+    padding-left: 20px;
 }
 
 .stat-box-icon svg {
-    width: 36px; /* Icon size */
+    width: 36px;
     height: 36px;
-    stroke: #4b5563; /* Icon color, can be changed to match subtext or a theme color */
+    stroke: #4b5563;
     opacity: 0.7;
 }
 
-/* Styles for movie list header (inside .movie-list-container) */
-.movie-list-header {
+.movie-list-header,
+.credits-list-header {
     display: flex;
-    justify-content: center; 
+    justify-content: center;
     align-items: center;
-    margin-bottom: 15px; 
+    margin-bottom: 10px;
+    flex-shrink: 0;
 }
 
-.movie-list-header h3 {
-    margin: 0; 
-    color: #e5e7eb; 
-    font-size: 1.2rem; 
+.movie-list-header h3,
+.credits-list-header h3 {
+    margin: 0;
+    color: #e5e7eb;
+    font-size: 1.0rem;
     font-weight: 600;
 }
 
-/* Styles for the movie grid itself (NORMAL VIEW) */
 .rewatched-movies-grid {
     display: grid;
-    gap: 15px; 
+    gap: 15px;
     grid-template-columns: repeat(5,1fr);
-    justify-items: center; 
-    align-items: center;   
+    justify-items: center;
+    align-items: flex-start; /* Changed from stretch to flex-start */
+    overflow-y: auto;
+    flex-grow: 1;
 }
 
-.movie-card { /* NORMAL VIEW card styles */
-    background-color: #2d3748; 
-    border-radius: 8px;
-    overflow: hidden; 
+/* Styles for the credits grid (Actors/Directors - NORMAL VIEW) */
+.credits-grid {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch; /* Stretch cards to fill row height */
+}
+
+/* Base card styling - applies to both .movie-card and .credit-card */
+.movie-card,
+.credit-card {
+    background-color: #2d3748;
+    border-radius: 8px; /* Consistent border radius */
+    overflow: hidden; /* Important for image clipping */
     text-align: center;
     display: flex;
     flex-direction: column;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     transition: transform 0.2s ease-in-out;
-    width: 100%; 
-    max-width: 200px; /* Max width for cards in normal dashboard view */
+    width: 100%; /* Will take width of its grid cell */
+    height: 100%; /* Will take height from align-items: stretch on grid */
 }
-.movie-card:hover {
+.movie-card:hover,
+.credit-card:hover {
     transform: translateY(-2px);
 }
 
-.movie-card .poster { 
+/* Image styling for both card types */
+.movie-card .poster, /* Existing class for rewatched movies */
+.credit-card .credit-profile-image { /* Class for actors/directors */
     width: 100%;
-    height: auto; 
-    display: block; 
-    /* Apply border-radius to .movie-card itself to clip poster */
+    height: auto; /* Height determined by aspect-ratio */
+    display: block;
+    aspect-ratio: 2 / 3; /* Common poster/profile aspect ratio */
+    object-fit: cover; /* Cover the area, might crop image */
+    background-color: #4a5568; /* Placeholder color if image is missing/slow */
 }
 
-.movie-card .poster-placeholder {
-    aspect-ratio: 2 / 3; 
+/* Placeholder div styling (if image src is missing and you use a div) */
+.movie-card .poster-placeholder, /* Existing */
+.credit-card .profile-image-placeholder { /* New for credits if needed */
+    aspect-ratio: 2 / 3;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -225,41 +252,106 @@ a:visted{
     color: #a0aec0;
     font-size: 0.9rem;
     line-height: 1.2;
-    width: 100%; 
+    width: 100%;
+    height: 100%; /* Ensure it fills the image area */
 }
 
-.movie-card .rewatch-info {
-    padding: 10px 8px; 
-    background-color: #2d3748; 
-    border-top: 1px solid #4a5568; 
+/* Info section styling for both card types */
+.movie-card .rewatch-info, /* Existing */
+.credit-card .credit-info { /* New for credits */
+    padding: 8px 6px; /* Slightly reduced padding to save space */
+    background-color: #2d3748; /* Match card background */
+    /* border-top: 1px solid #4a5568; Optional separator */
+    flex-grow: 1; /* Allows this section to take remaining vertical space if image is short */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center text vertically if there's extra space */
 }
 
-.movie-card .rewatch-count {
-    font-size: 0.85rem;
+/* Text styling within info sections */
+.movie-card .rewatch-count, /* Existing */
+.credit-card .credit-film-count { /* New for film count */
+    font-size: 0.8rem; /* Adjusted for consistency */
     font-weight: 600;
     color: #e2e8f0;
-    margin: 0;
+    margin: 0 0 2px 0; /* Small margin bottom if two lines */
+    line-height: 1.2;
 }
 
-.movie-card .movie-title-tooltip { 
-    font-size: 0.75rem;
+.movie-card .movie-title-tooltip, /* Existing */
+.credit-card .credit-name { /* Reusing .credit-name, ensuring it's styled like this */
+    font-size: 0.7rem; /* Adjusted for consistency */
     color: #a0aec0;
-    margin-top: 4px;
+    margin: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%; 
+    max-width: 100%;
+    line-height: 1.1;
 }
 
-@media (max-width: 767.98px) {
-    .movie-list-container > .rewatched-movies-grid .movie-card {
-        max-width: 280px; /* Allow cards to be a bit wider on mobile,
-                             centered in the single column.
-                             Overrides the base max-width: 200px. */
-        /* Other .movie-card properties like background, flex-direction, etc., are inherited
-           unless specifically overridden here for mobile. */
+/* Specific max-width for movie-card in rewatched-movies-grid if needed */
+.rewatched-movies-grid .movie-card {
+    max-width: 200px; /* This was specific to rewatched, retain if desired behavior */
+    /* If rewatched cards should also just fill 1fr, remove this max-width */
+}
+
+
+@media (max-width: 1199.98px) {
+    .rewatched-movies-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    /* .credits-grid { grid-template-columns: repeat(5, 1fr); } // Still 5 */
+}
+
+@media (max-width: 991.98px) {
+    .rewatched-movies-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+     .credits-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+    }
+    .credit-card .credit-name, .credit-card .credit-film-count {
+        font-size: 0.65rem;
+    }
+    .movie-card .rewatch-count, .movie-card .movie-title-tooltip {
+        font-size: 0.75rem;
     }
 }
+
+
+@media (max-width: 767.98px) {
+    .movie-list-container > .rewatched-movies-grid {
+         grid-template-columns: repeat(2, 1fr);
+    }
+    .movie-list-container > .rewatched-movies-grid .movie-card {
+        max-width: none; /* Let grid control width for rewatched movies too on mobile */
+    }
+     .credits-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+    }
+    .credit-card .credit-name, .credit-card .credit-film-count {
+        font-size: 0.6rem;
+    }
+     .movie-card .rewatch-count, .movie-card .movie-title-tooltip {
+        font-size: 0.7rem;
+    }
+    .credits-list-header h3, .movie-list-header h3 {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .rewatched-movies-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .credits-grid {
+        grid-template-columns: repeat(2, 1fr); /* Or 3 if they can be made small enough */
+    }
+}
+
 
 /* --- Fullscreen Button Styles --- */
 .fullscreen-btn {
@@ -284,7 +376,8 @@ a:visted{
 }
 
 .chart-container:hover .fullscreen-btn,
-.movie-list-container:hover .fullscreen-btn { 
+.movie-list-container:hover .fullscreen-btn,
+.credits-list-container:hover .fullscreen-btn {
     opacity: 1;
     visibility: visible;
     transform: scale(1) translate(0, 0);
@@ -314,7 +407,7 @@ a:visted{
     width: 90vw;
     height: 90vh;
     background-color: #1f2937;
-    padding: 20px; 
+    padding: 20px;
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     z-index: 1000;
@@ -345,14 +438,14 @@ a:visted{
 }
 
 .fullscreen-canvas-container,
-.fullscreen-generic-content-container { 
+.fullscreen-generic-content-container {
     flex-grow: 1;
     width: 100%;
     height:100%;
     position: relative;
-    /* overflow-y is handled by child wrapper if needed */
     display:flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 #fullscreenCanvas {
@@ -361,48 +454,57 @@ a:visted{
     height: 100% !important;
 }
 
-/* Wrapper for generic content in fullscreen (contains header + scrollable grid area) */
 .fullscreen-generic-header {
     text-align: center;
     color: #e5e7eb;
-    font-size: 1.5rem; 
+    font-size: 1.5rem;
     font-weight: 600;
-    padding: 15px 0; 
-    flex-shrink: 0; 
+    padding: 15px 0;
+    flex-shrink: 0;
+    border-bottom: 1px solid #374151;
 }
 
 .fullscreen-generic-content-container .fullscreen-cloned-content-wrapper {
-    padding: 10px; /* Padding around the grid area */
     flex-grow: 1;
-    /* overflow-y: auto; Allows scrolling for the grid area if content exceeds height */
-    min-height: 0; /* Important for flex children that need to scroll */
+    overflow-y: auto;
+    min-height: 0;
+    padding: 15px;
 }
 
 
-/* Specific styles for the rewatched movies grid when in FULLSCREEN */
-.fullscreen-generic-content-container .fullscreen-cloned-content-wrapper .rewatched-movies-grid {
-    display: grid; 
-    grid-template-columns: repeat(7, 1fr); /* Exactly 7 columns */
-    gap: 10px; /* Adjust gap as needed */
-    align-items: start; /* Align items if text below poster varies height */
+.fullscreen-generic-content-container .fullscreen-cloned-content-wrapper .rewatched-movies-grid,
+.fullscreen-generic-content-container .fullscreen-cloned-content-wrapper .credits-grid {
+    /* Shared fullscreen grid styling */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* More flexible for fullscreen */
+    gap: 15px;
+    align-items: stretch; /* Stretch cards to be same height in fullscreen */
 }
 
-/* Movie card styling within FULLSCREEN */
-.fullscreen-generic-content-container .movie-card {
-    max-width: none; /* Remove max-width from normal view */
-    width: 100%;     /* Ensure card fills its 1fr column */
-    /* Inherits .movie-card styles like background, border-radius, etc.
-       Override here if specific fullscreen appearance is needed */
+
+.fullscreen-generic-content-container .movie-card,
+.fullscreen-generic-content-container .credit-card {
+    max-width: none;
+    width: 100%;
+    height: 100%; /* Stretch to fill cell height in fullscreen grid */
+    padding: 10px; /* More padding for fullscreen cards */
 }
 
-/* 
-Poster within fullscreen card
-.fullscreen-generic-content-container .movie-card .poster {
-    width: 100%; height: auto; is already general style
+.fullscreen-generic-content-container .movie-card .poster,
+.fullscreen-generic-content-container .credit-card .credit-profile-image {
+    /* Image styling in fullscreen - already covered by base & aspect-ratio */
 }
 
-Rewatch info within fullscreen card
-.fullscreen-generic-content-container .movie-card .rewatch-info {
-    Styles can be inherited or specifically adjusted for fullscreen, e.g., font-size
-}  
-*/
+.fullscreen-generic-content-container .movie-card .rewatch-info,
+.fullscreen-generic-content-container .credit-card .credit-info {
+    padding: 10px;
+}
+
+.fullscreen-generic-content-container .movie-card .rewatch-count,
+.fullscreen-generic-content-container .credit-card .credit-film-count {
+    font-size: 0.9rem;
+}
+.fullscreen-generic-content-container .movie-card .movie-title-tooltip,
+.fullscreen-generic-content-container .credit-card .credit-name {
+    font-size: 0.8rem;
+}

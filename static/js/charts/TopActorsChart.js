@@ -1,106 +1,88 @@
-// TopActorsChart.js
-// No 'import Chart from ...' line needed. Chart is global.
-// No 'import ... from ./chartConfig.js'. MyAppCharts is global if needed, but defaults are applied.
+// TopActorsChart.js (Now functions as TopActorsList.js)
 
-let topActorsChartInstance = null;
+// Constants for image display
+// IMPORTANT: Replace with an actual URL to a 2:3 aspect ratio rectangular placeholder
+const ACTOR_PLACEHOLDER_IMAGE_URL = 'https://via.placeholder.com/180x270.png?text=No+Profile';
 
-async function renderTopActorsChart() {
-    const errorMessageDiv = document.getElementById('TopActorsChartErrorMessage');
-    const canvasElement = document.getElementById('TopActorsChart');
+async function renderTopActorsList() {
+    const containerElement = document.getElementById('topActorsContainer');
+    const errorMessageDiv = document.getElementById('topActorsErrorMessage');
 
-    if (!canvasElement) {
-        console.error("Canvas element 'TopActorsChart' not found.");
+    if (!containerElement) {
+        console.error("Container element 'topActorsContainer' not found.");
         if (errorMessageDiv) {
-            errorMessageDiv.textContent = "Chart canvas for Top Actors not found.";
+            errorMessageDiv.textContent = "Display area for Top Actors not found.";
             errorMessageDiv.classList.remove('hidden');
         }
         return;
     }
-    const ctx = canvasElement.getContext('2d');
 
-    // Destroy existing chart instance if it exists
-    if (typeof Chart !== 'undefined' && Chart.getChart) {
-        const existingChartOnCanvas = Chart.getChart(canvasElement);
-        if (existingChartOnCanvas) {
-            existingChartOnCanvas.destroy();
-        }
-    }
-    if (topActorsChartInstance) {
-        topActorsChartInstance.destroy();
-        topActorsChartInstance = null;
-    }
+    containerElement.innerHTML = '';
+    if (errorMessageDiv) errorMessageDiv.classList.add('hidden');
 
     try {
-        // Fetch data for top 5 Actors for initial display
-        const response = await fetch('/api/top-actors?limit=5'); // Fetch only top 5
+        const response = await fetch('/api/top-actors?limit=5');
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`API Error: ${response.status} ${errorText || response.statusText}`);
         }
-        const chartData = await response.json(); // Contains data for top 5
-        if (!chartData || !chartData.labels || !chartData.datasets) {
-            throw new Error('Invalid chart data for Top 5 Actors from API.');
+        const actors = await response.json();
+
+        if (!actors || !Array.isArray(actors)) {
+            throw new Error('Invalid data format for Top Actors from API.');
         }
 
+        if (actors.length === 0) {
+            containerElement.innerHTML = `<p class="text-muted text-center w-100" style="grid-column: 1 / -1;">No top actors found.</p>`;
+            return;
+        }
 
-        topActorsChartInstance = new Chart(ctx, {
-            type: 'bar', // Or 'pie', 'doughnut', 'horizontalBar' if you prefer
-            data: chartData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, // Adjust as needed
-                scales: {
-                    x: {
-                        title: {
-                            display: false,
-                            text: 'Actor'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: false,
-                            text: 'Number of Films'
-                        },
-                        beginAtZero: true,
-                        ticks: {
-                            // Ensure y-axis ticks are integers if dealing with counts
-                            precision: 0
-                        }
-                    }
-                },
-                plugins: {
-                    title: {
-                        display: true,
-                        text: "Top 5 Actors by Film Count"
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) { label += ': '; }
-                                if (context.parsed.y !== null) {
-                                    label += context.parsed.y + (context.parsed.y === 1 ? ' film' : ' films');
-                                }
-                                return label;
-                            }
-                        }
-                    },
-                    legend: {
-                        // Hide legend if there's only one dataset and the title is clear
-                        display: chartData.datasets.length > 1
-                    }
-                }
-            }
+        actors.forEach(actor => {
+            const card = document.createElement('div');
+            card.className = 'credit-card';
+            card.title = `${actor.name} - ${actor.filmCount} film${actor.filmCount !== 1 ? 's' : ''}`;
+
+            const profileImageUrl = actor.profilePath || ACTOR_PLACEHOLDER_IMAGE_URL;
+
+            const imageElement = document.createElement('img');
+            imageElement.className = 'credit-profile-image'; // Styled like a poster
+            imageElement.src = profileImageUrl;
+            imageElement.alt = `Profile of ${actor.name}`;
+            imageElement.onerror = function() {
+                this.onerror = null;
+                this.src = ACTOR_PLACEHOLDER_IMAGE_URL;
+                this.alt = 'Placeholder image';
+            };
+
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'credit-info'; // Matches movie-card's info section
+
+            const filmCountP = document.createElement('p');
+            filmCountP.className = 'credit-film-count'; // For film count
+            filmCountP.textContent = `${actor.filmCount} film${actor.filmCount !== 1 ? 's' : ''}`;
+
+            const nameElement = document.createElement('p');
+            nameElement.className = 'credit-name'; // For the actor's name
+            nameElement.textContent = actor.name;
+
+            infoDiv.appendChild(filmCountP); // Typically film count/rewatches first
+            infoDiv.appendChild(nameElement);
+
+            card.appendChild(imageElement);
+            card.appendChild(infoDiv);
+            containerElement.appendChild(card);
         });
-        if (errorMessageDiv) errorMessageDiv.classList.add('hidden');
+
     } catch (error) {
-        console.error('Error rendering Top Actors chart:', error);
+        console.error('Error rendering Top Actors list:', error);
         if (errorMessageDiv) {
-            errorMessageDiv.textContent = `Could not load Top Actors chart: ${error.message}`;
+            errorMessageDiv.textContent = `Could not load Top Actors: ${error.message}`;
             errorMessageDiv.classList.remove('hidden');
+        }
+        if (containerElement) {
+            containerElement.innerHTML = `<p class="text-danger text-center w-100" style="grid-column: 1 / -1;">Error loading actors.</p>`;
         }
     }
 }
 
-// Call the function to render the chart when the script loads
-renderTopActorsChart();
+document.addEventListener('DOMContentLoaded', renderTopActorsList);
