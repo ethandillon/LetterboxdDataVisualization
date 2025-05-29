@@ -1,88 +1,103 @@
-// TopActorsChart.js (Now functions as TopActorsList.js)
+// TopActorsChart.js
+document.addEventListener('DOMContentLoaded', () => {
+    // Corrected ID
+    const container = document.getElementById('TopActorsListContainer'); 
+    // Corrected Error Message ID
+    const errorMessageElement = document.getElementById('TopActorsListErrorMessage'); 
+    
+    const PROFILE_SIZE_NORMAL = 'w185'; // For dashboard cards
+    const PLACEHOLDER_PERSON_IMAGE_URL = 'https://via.placeholder.com/150x225.png?text=No+Image'; // 2:3 aspect ratio placeholder
 
-// Constants for image display
-// IMPORTANT: Replace with an actual URL to a 2:3 aspect ratio rectangular placeholder
-const ACTOR_PLACEHOLDER_IMAGE_URL = 'https://via.placeholder.com/180x270.png?text=No+Profile';
-
-async function renderTopActorsList() {
-    const containerElement = document.getElementById('topActorsContainer');
-    const errorMessageDiv = document.getElementById('topActorsErrorMessage');
-
-    if (!containerElement) {
-        console.error("Container element 'topActorsContainer' not found.");
-        if (errorMessageDiv) {
-            errorMessageDiv.textContent = "Display area for Top Actors not found.";
-            errorMessageDiv.classList.remove('hidden');
-        }
-        return;
-    }
-
-    containerElement.innerHTML = '';
-    if (errorMessageDiv) errorMessageDiv.classList.add('hidden');
-
-    try {
-        const response = await fetch('/api/top-actors?limit=5');
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`API Error: ${response.status} ${errorText || response.statusText}`);
-        }
-        const actors = await response.json();
-
-        if (!actors || !Array.isArray(actors)) {
-            throw new Error('Invalid data format for Top Actors from API.');
-        }
-
-        if (actors.length === 0) {
-            containerElement.innerHTML = `<p class="text-muted text-center w-100" style="grid-column: 1 / -1;">No top actors found.</p>`;
+    async function displayTopActors(limit = 5) {
+        if (!container) {
+            // Updated console error message to reflect the correct ID
+            console.error("Container 'TopActorsListContainer' not found."); 
+            if (errorMessageElement) {
+                errorMessageElement.textContent = "Display area for Top Actors not found.";
+                errorMessageElement.classList.remove('hidden');
+            }
             return;
         }
+        container.innerHTML = ''; // Clear previous content
 
-        actors.forEach(actor => {
-            const card = document.createElement('div');
-            card.className = 'credit-card';
-            card.title = `${actor.name} - ${actor.filmCount} film${actor.filmCount !== 1 ? 's' : ''}`;
+        const profilePxWidth = parseInt(PROFILE_SIZE_NORMAL.substring(1));
+        const profilePxHeight = Math.round(profilePxWidth * 1.5); 
+        const placeholderSizedUrl = PLACEHOLDER_PERSON_IMAGE_URL.replace('150x225', `${profilePxWidth}x${profilePxHeight}`);
 
-            const profileImageUrl = actor.profilePath || ACTOR_PLACEHOLDER_IMAGE_URL;
+        try {
+            const response = await fetch(`/api/top-actors?limit=${limit}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`API Error: ${response.status} ${errorText || response.statusText}`);
+            }
+            const actors = await response.json();
+            
+            if (actors && actors.length > 0) {
+                actors.forEach(actor => {
+                    const card = document.createElement('div');
+                    card.className = 'person-card';
+                    card.title = `${actor.name} - ${actor.filmCount} film${actor.filmCount !== 1 ? 's' : ''}`; 
 
-            const imageElement = document.createElement('img');
-            imageElement.className = 'credit-profile-image'; // Styled like a poster
-            imageElement.src = profileImageUrl;
-            imageElement.alt = `Profile of ${actor.name}`;
-            imageElement.onerror = function() {
-                this.onerror = null;
-                this.src = ACTOR_PLACEHOLDER_IMAGE_URL;
-                this.alt = 'Placeholder image';
-            };
+                    let imageElement;
 
-            const infoDiv = document.createElement('div');
-            infoDiv.className = 'credit-info'; // Matches movie-card's info section
+                    if (actor.profilePath && typeof actor.profilePath === 'string' && actor.profilePath.startsWith('http')) {
+                        const tmdbSizeRegex = /\/w\d+\//; 
+                        const imageSrcToUse = actor.profilePath.replace(tmdbSizeRegex, `/${PROFILE_SIZE_NORMAL}/`);
+                        
+                        imageElement = document.createElement('img');
+                        imageElement.className = 'profile-image';
+                        imageElement.src = imageSrcToUse;
+                        imageElement.alt = `Profile of ${actor.name}`;
+                        imageElement.onerror = function() { 
+                            this.onerror=null; 
+                            this.src=placeholderSizedUrl; 
+                            this.alt = 'Placeholder image';
+                        };
+                    } else {
+                        imageElement = document.createElement('div');
+                        imageElement.className = 'profile-image-placeholder'; 
+                        imageElement.textContent = 'No Image';
+                    }
+                    
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'person-info';
 
-            const filmCountP = document.createElement('p');
-            filmCountP.className = 'credit-film-count'; // For film count
-            filmCountP.textContent = `${actor.filmCount} film${actor.filmCount !== 1 ? 's' : ''}`;
+                    const filmCountP = document.createElement('p');
+                    filmCountP.className = 'film-count';
+                    filmCountP.textContent = `${actor.filmCount} film${actor.filmCount !== 1 ? 's' : ''}`;
+                    
+                    const nameP = document.createElement('p');
+                    nameP.className = 'person-name';
+                    nameP.textContent = actor.name;
 
-            const nameElement = document.createElement('p');
-            nameElement.className = 'credit-name'; // For the actor's name
-            nameElement.textContent = actor.name;
+                    infoDiv.appendChild(filmCountP);
+                    infoDiv.appendChild(nameP);
+                    
+                    card.appendChild(imageElement);
+                    card.appendChild(infoDiv);
+                    container.appendChild(card);
+                });
+                if (errorMessageElement) errorMessageElement.classList.add('hidden');
+            } else {
+                container.innerHTML = `<p class="text-muted text-center w-100" style="grid-column: 1 / -1;">No top actors found.</p>`;
+                if (errorMessageElement) errorMessageElement.classList.add('hidden');
+            }
 
-            infoDiv.appendChild(filmCountP); // Typically film count/rewatches first
-            infoDiv.appendChild(nameElement);
-
-            card.appendChild(imageElement);
-            card.appendChild(infoDiv);
-            containerElement.appendChild(card);
-        });
-
-    } catch (error) {
-        console.error('Error rendering Top Actors list:', error);
-        if (errorMessageDiv) {
-            errorMessageDiv.textContent = `Could not load Top Actors: ${error.message}`;
-            errorMessageDiv.classList.remove('hidden');
+        } catch (error) {
+            console.error('Error fetching top actors:', error);
+            if (errorMessageElement) {
+                errorMessageElement.textContent = 'Failed to load top actors. ' + error.message;
+                errorMessageElement.classList.remove('hidden');
+            }
+            if (container) { 
+                container.innerHTML = `<p class="text-danger text-center w-100" style="grid-column: 1 / -1;">Error loading actors.</p>`;
+            }
         }
         if (containerElement) {
             containerElement.innerHTML = `<p class="text-danger text-center w-100" style="grid-column: 1 / -1;">Error loading actors.</p>`;
         }
     }
-}
 
-document.addEventListener('DOMContentLoaded', renderTopActorsList);
+    // Initial load for dashboard view
+    displayTopActors(5);
+});

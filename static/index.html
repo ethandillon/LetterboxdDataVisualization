@@ -91,30 +91,30 @@
                 <div id="GenreChartErrorMessage" class="error-message hidden mt-2"></div>
             </div>
 
-            <!-- Column for Top Directors and Actors Lists -->
+            <!-- Column for Stacked Lists: Directors and Actors -->
             <div class="col-md-3 d-flex flex-column">
-                <!-- Section 3: Top Directors List -->
-                <div class="credits-list-container mb-4">
-                    <button class="fullscreen-btn" data-target-id="topDirectorsContainer" data-type="generic" aria-label="Toggle fullscreen for Top Directors">↗</button>
-                    <div class="credits-list-header">
-                        <h3>Top Directors</h3>
+                <!-- List 3: Top Directors -->
+                <div class="chart-container person-list-outer-container mb-4">
+                    <button class="fullscreen-btn" data-target-id="TopDirectorsListContainer" data-type="generic" aria-label="Toggle fullscreen for Top Directors">↗</button>
+                    <div class="person-list-header">
+                        <h3>Top 5 Directors</h3>
                     </div>
-                    <div id="topDirectorsContainer" class="credits-grid">
+                    <div id="TopDirectorsListContainer" class="person-grid">
                         <!-- Director cards will be injected here by JavaScript -->
                     </div>
-                    <div id="topDirectorsErrorMessage" class="error-message hidden mt-2"></div>
+                    <div id="TopDirectorsListErrorMessage" class="error-message hidden mt-2"></div>
                 </div>
 
-                <!-- Section 4: Top Actors List -->
-                <div class="credits-list-container">
-                    <button class="fullscreen-btn" data-target-id="topActorsContainer" data-type="generic" aria-label="Toggle fullscreen for Top Actors">↗</button>
-                    <div class="credits-list-header">
-                        <h3>Top Actors</h3>
+                <!-- List 4: Top Actors -->
+                <div class="chart-container person-list-outer-container">
+                     <button class="fullscreen-btn" data-target-id="TopActorsListContainer" data-type="generic" aria-label="Toggle fullscreen for Top Actors">↗</button>
+                    <div class="person-list-header">
+                        <h3>Top 5 Actors</h3>
                     </div>
-                    <div id="topActorsContainer" class="credits-grid">
+                    <div id="TopActorsListContainer" class="person-grid">
                         <!-- Actor cards will be injected here by JavaScript -->
                     </div>
-                    <div id="topActorsErrorMessage" class="error-message hidden mt-2"></div>
+                    <div id="TopActorsListErrorMessage" class="error-message hidden mt-2"></div>
                 </div>
             </div>
         </div>
@@ -134,8 +134,8 @@
                 </div>
             </div>
             <!-- Chart: Movies Watched Over Time Chart -->
-            <div class="col-12 col-lg-3 d-flex flex-column"> 
-                <div class="chart-container bar-chart-container">
+            <div class="col-md-3 d-flex flex-column"> <!-- Adjusted from col-lg-6 to col-md-3 to fit example layout -->
+                <div class="chart-container bar-chart-container"> <!-- Assuming this is a bar chart, kept bar-chart-container -->
                     <button class="fullscreen-btn" data-target-id="MoviesWatchedOverTimeChart" data-type="chart" aria-label="Toggle fullscreen for Movies Watched Over Time chart">↗</button>
                     <canvas id="MoviesWatchedOverTimeChart"></canvas>
                 </div>

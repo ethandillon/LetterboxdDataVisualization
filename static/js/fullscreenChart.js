@@ -96,10 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            let dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
+            let dataForFullscreen;
             let optionsForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.options || {}));
 
-            // Initialize/ensure scales object and its sub-properties exist
             optionsForFullscreen.scales = optionsForFullscreen.scales || {};
             optionsForFullscreen.scales.x = optionsForFullscreen.scales.x || {};
             optionsForFullscreen.scales.x.title = optionsForFullscreen.scales.x.title || {};
@@ -110,6 +109,14 @@ document.addEventListener('DOMContentLoaded', () => {
             optionsForFullscreen.scales.x.ticks = optionsForFullscreen.scales.x.ticks || {color: '#9ca3af'};
             optionsForFullscreen.scales.x.ticks.display = true;
 
+            // NOTE: The TopDirectorsChart and TopActorsChart are no longer Chart.js charts.
+            // The logic for fetching Top 25 Directors/Actors for charts is removed from here.
+            // If other charts need special data fetching, that logic remains.
+            // For example, if MoviesByReleaseYearChart needed more data for fullscreen:
+            // if (targetId === 'MoviesByReleaseYearChart') { ... } 
+            
+            dataForFullscreen = JSON.parse(JSON.stringify(originalChartInstance.config.data));
+
 
             const chartConfig = {
                 type: originalChartInstance.config.type,
@@ -117,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 options: {
                     ...optionsForFullscreen,
                     animation: false,
-                    maintainAspectRatio: false,
+                    maintainAspectRatio: false, 
                     responsive: true,
                 }
             };
@@ -128,12 +135,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            if (targetId === 'MoviesByGenrePieChart') {
+            if (targetId === 'MoviesByGenrePieChart') { 
                 chartConfig.options.plugins = chartConfig.options.plugins || {};
                 chartConfig.options.plugins.legend = chartConfig.options.plugins.legend || {};
                 const existingLabelOptions = chartConfig.options.plugins.legend.labels || {};
                 chartConfig.options.plugins.legend = {
-                    ...(chartConfig.options.plugins.legend),
+                    ...(chartConfig.options.plugins.legend), 
                     display: true,
                     position: 'top',
                     align: 'center',
@@ -153,75 +160,65 @@ document.addEventListener('DOMContentLoaded', () => {
             fullscreenCanvasContainer.classList.remove('hidden');
 
         } else if (type === 'generic') {
-            fullscreenGenericContentHost.innerHTML = ''; // Clear previous
+            fullscreenGenericContentHost.innerHTML = ''; 
 
-            // Create common wrapper structure for generic content
-            const header = document.createElement('h3');
-            header.className = 'fullscreen-generic-header';
-            fullscreenGenericContentHost.appendChild(header);
+            let headerText = '';
+            let fetchFunction = null;
+            let gridItemClass = ''; // To distinguish between movie grid and person grid for styling if needed
+            let limit = 0;
 
-            const gridWrapper = document.createElement('div');
-            gridWrapper.className = 'fullscreen-cloned-content-wrapper';
-            fullscreenGenericContentHost.appendChild(gridWrapper);
+            if (targetId === 'mostRewatchedMoviesContainer') {
+                headerText = 'Most Rewatched Movies';
+                fetchFunction = window.MyAppGlobal?.fetchAndDisplayMostRewatched;
+                gridItemClass = 'rewatched-movies-grid'; // Existing class
+                limit = 14; // e.g. 2 rows of 7
+            } else if (targetId === 'TopDirectorsListContainer') {
+                headerText = 'Top 25 Directors';
+                fetchFunction = window.MyAppGlobal?.fetchAndDisplayTopDirectors;
+                gridItemClass = 'person-grid'; // New class for person grid
+                limit = 28; // e.g. 4 rows of 7
+            } else if (targetId === 'TopActorsListContainer') {
+                headerText = 'Top 25 Actors';
+                fetchFunction = window.MyAppGlobal?.fetchAndDisplayTopActors;
+                gridItemClass = 'person-grid';
+                limit = 28; // e.g. 4 rows of 7
+            }
 
-            let contentGridElement; // This will hold the actual grid
+            if (fetchFunction) {
+                const header = document.createElement('h3');
+                header.className = 'fullscreen-generic-header';
+                header.textContent = headerText;
+                fullscreenGenericContentHost.appendChild(header);
 
-            if (targetId === 'mostRewatchedMoviesContainer' && typeof window.MyAppGlobal?.fetchAndDisplayMostRewatched === 'function') {
-                header.textContent = 'Most Rewatched Movies (Top 14)';
-                contentGridElement = document.createElement('div');
-                contentGridElement.className = 'rewatched-movies-grid'; // Use specific class
-                gridWrapper.appendChild(contentGridElement);
+                const gridWrapper = document.createElement('div');
+                gridWrapper.className = 'fullscreen-cloned-content-wrapper'; 
+                fullscreenGenericContentHost.appendChild(gridWrapper);
 
-                window.MyAppGlobal.fetchAndDisplayMostRewatched(
-                    14,
-                    contentGridElement,
-                    'w342' // Larger poster size for fullscreen
-                );
-
-            } else if (targetId === 'topDirectorsContainer') {
-                header.textContent = 'Top Directors (Top 20)';
-                contentGridElement = document.createElement('div');
-                contentGridElement.className = 'credits-grid'; // Use specific class
-                gridWrapper.appendChild(contentGridElement);
-
-                try {
-                    const response = await fetch('/api/top-directors?limit=20');
-                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
-                    const directorsData = await response.json();
-                    renderCreditsListFullscreen(directorsData, contentGridElement, FULLSCREEN_DIRECTOR_PLACEHOLDER_URL);
-                } catch (err) {
-                    console.error('Error fetching/rendering top directors for fullscreen:', err);
-                    contentGridElement.innerHTML = `<p class="text-danger text-center w-100">Error loading directors.</p>`;
-                }
-
-            } else if (targetId === 'topActorsContainer') {
-                header.textContent = 'Top Actors (Top 20)';
-                contentGridElement = document.createElement('div');
-                contentGridElement.className = 'credits-grid'; // Use specific class
-                gridWrapper.appendChild(contentGridElement);
-
-                try {
-                    const response = await fetch('/api/top-actors?limit=20');
-                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
-                    const actorsData = await response.json();
-                    renderCreditsListFullscreen(actorsData, contentGridElement, FULLSCREEN_ACTOR_PLACEHOLDER_URL);
-                } catch (err) {
-                    console.error('Error fetching/rendering top actors for fullscreen:', err);
-                    contentGridElement.innerHTML = `<p class="text-danger text-center w-100">Error loading actors.</p>`;
-                }
-
-            } else { // Fallback for other generic content (if any)
-                header.textContent = 'Fullscreen View'; // Generic title
+                const fullscreenGrid = document.createElement('div');
+                fullscreenGrid.className = gridItemClass; // Use specific grid class
+                // ID is not strictly necessary for fullscreenGrid as it's temporary
+                gridWrapper.appendChild(fullscreenGrid);
+                
+                // Call the specific fetch function
+                // The fetch functions now take (limit, containerElementOrId, errorElementId)
+                // For fullscreen, we pass the actual element and null for errorElementId as errors are handled by the function
+                fetchFunction(limit, fullscreenGrid, null); 
+                fullscreenGenericContentHost.classList.remove('hidden');
+            } else if (document.getElementById(targetId)) { // Fallback for other generic content
                 const originalContentElement = document.getElementById(targetId);
-                if (originalContentElement) {
-                    const clonedContent = originalContentElement.cloneNode(true);
-                    clonedContent.removeAttribute('id');
-                    gridWrapper.appendChild(clonedContent); // Add cloned content to the wrapper
-                } else {
-                    console.error('Original generic content element not found for ID:', targetId);
-                    header.textContent = 'Error: Content not found';
-                    gridWrapper.innerHTML = `<p class="text-danger text-center w-100">Content not found.</p>`;
-                }
+                const contentWrapper = document.createElement('div');
+                contentWrapper.className = 'fullscreen-cloned-content-wrapper'; 
+                
+                const clonedContent = originalContentElement.cloneNode(true);
+                clonedContent.removeAttribute('id'); 
+                
+                contentWrapper.appendChild(clonedContent);
+                fullscreenGenericContentHost.appendChild(contentWrapper);
+                fullscreenGenericContentHost.classList.remove('hidden');
+            } else {
+                console.error('Original generic content element not found or fetch function missing for ID:', targetId);
+                exitFullscreen(); 
+                return;
             }
             fullscreenGenericContentHost.classList.remove('hidden');
         } else {
