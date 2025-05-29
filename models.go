@@ -44,3 +44,10 @@ type MoviesWatchedOverTimeChartData struct {
 	Labels   []interface{} `json:"labels"` // MODIFIED: Changed from []string to []interface{}
 	Datasets []Dataset     `json:"datasets"`
 }
+
+// TopCreditData holds information for a single top actor or director.
+type TopCreditData struct {
+	Name        string `json:"name"`
+	FilmCount   int    `json:"filmCount"`
+	ProfilePath string `json:"profilePath,omitempty"` // omitempty if no path or it's an empty string
+}

@@ -130,129 +130,127 @@ func FetchFilmCountsByGenre() (ChartData, error) {
 	return chartData, nil
 }
 
-// FetchTopDirectors retrieves the top 5 directors by the number of films they directed.
-func FetchTopDirectors(limit int) (ChartData, error) {
+func FetchTopDirectors(limit int) ([]TopCreditData, error) {
 	if db == nil {
 		log.Println("FetchTopDirectors: Database connection is not initialized.")
-		return ChartData{}, sql.ErrConnDone // Or a more specific error
+		return nil, sql.ErrConnDone
 	}
 
-	// Query to get the top 5 directors by film count
 	query := fmt.Sprintf(`
--- Alternative query using a LATERAL JOIN which is often clearer
 SELECT
-	d.name AS director_name,
-	COUNT(*) AS film_count
+    d.name AS director_name,
+    (ARRAY_AGG(d.path) FILTER (WHERE d.path IS NOT NULL AND d.path <> ''))[1] AS director_profile_path,
+    COUNT(*) AS film_count
 FROM
-	films f,
-	LATERAL UNNEST(f.directors) AS d(name) -- d.name will be each director
+    films f,
+    LATERAL UNNEST(f.directors, f.directors_profile_paths) AS d(name, path)
 WHERE
-	f.directors IS NOT NULL AND array_length(f.directors, 1) > 0 -- Optional pre-filter for the films table
-	AND d.name IS NOT NULL AND d.name <> '' -- Filter unnested names
+    f.directors IS NOT NULL AND array_length(f.directors, 1) > 0
+    AND d.name IS NOT NULL AND d.name <> ''
 GROUP BY
-	d.name
+    d.name
 ORDER BY
-	film_count DESC
+    film_count DESC
 LIMIT %d;
 		`, limit)
 
 	rows, err := db.Query(query)
 	if err != nil {
 		log.Println("Database query error in FetchTopDirectors:", err)
-		return ChartData{}, err
+		return nil, err
 	}
 	defer rows.Close()
 
-	var directorNames []string
-	var filmCounts []int
+	var topDirectors []TopCreditData
 
 	for rows.Next() {
-		var directorName string
+		var name string
+		var profilePath sql.NullString // Use sql.NullString for potentially NULL profile paths
 		var count int
-		if err := rows.Scan(&directorName, &count); err != nil {
+		if err := rows.Scan(&name, &profilePath, &count); err != nil {
 			log.Println("Row scanning error in FetchTopDirectors:", err)
-			return ChartData{}, err
+			return nil, err
 		}
-		directorNames = append(directorNames, directorName)
-		filmCounts = append(filmCounts, count)
+
+		pathStr := ""
+		if profilePath.Valid {
+			pathStr = profilePath.String
+		}
+
+		topDirectors = append(topDirectors, TopCreditData{
+			Name:        name,
+			FilmCount:   count,
+			ProfilePath: pathStr,
+		})
 	}
 
 	if err := rows.Err(); err != nil {
 		log.Println("Rows iteration error in FetchTopDirectors:", err)
-		return ChartData{}, err
+		return nil, err
 	}
 
-	chartData := ChartData{
-		Labels: directorNames,
-		Datasets: []Dataset{
-			{
-				Label: "Top Directors by Film Count",
-				Data:  filmCounts,
-			},
-		},
-	}
-	return chartData, nil
+	return topDirectors, nil
 }
 
-func FetchTopActors(limit int) (ChartData, error) {
+func FetchTopActors(limit int) ([]TopCreditData, error) {
 	if db == nil {
 		log.Println("FetchTopActors: Database connection is not initialized.")
-		return ChartData{}, sql.ErrConnDone // Or a more specific error
+		return nil, sql.ErrConnDone
 	}
 
-	// Query to get the top 5 Actors by film count
 	query := fmt.Sprintf(`
-		SELECT 
-			g.actors_name, 
-			COUNT(*) as movie_count 
-		FROM 
-			films,
-			UNNEST(actors) AS g(actors_name) -- Unnest the array and alias the resulting column
-		WHERE 
-			g.actors_name IS NOT NULL AND g.actors_name <> '' -- Filter out NULL or empty genres
-		GROUP BY 
-			g.actors_name 
-		ORDER BY 
-			movie_count DESC
-		LIMIT %d;
+SELECT
+    g.name AS actors_name,
+    (ARRAY_AGG(g.path) FILTER (WHERE g.path IS NOT NULL AND g.path <> ''))[1] AS actor_profile_path,
+    COUNT(*) AS movie_count
+FROM
+    films f,
+    LATERAL UNNEST(f.actors, f.actor_profile_paths) AS g(name, path)
+WHERE
+    g.name IS NOT NULL AND g.name <> ''
+GROUP BY
+    g.name
+ORDER BY
+    movie_count DESC
+LIMIT %d;
 	`, limit)
 
 	rows, err := db.Query(query)
 	if err != nil {
 		log.Println("Database query error in FetchTopActors:", err)
-		return ChartData{}, err
+		return nil, err
 	}
 	defer rows.Close()
 
-	var directorNames []string
-	var filmCounts []int
+	var topActors []TopCreditData
 
 	for rows.Next() {
-		var directorName string
+		var name string
+		var profilePath sql.NullString // Use sql.NullString for potentially NULL profile paths
 		var count int
-		if err := rows.Scan(&directorName, &count); err != nil {
+		if err := rows.Scan(&name, &profilePath, &count); err != nil {
 			log.Println("Row scanning error in FetchTopActors:", err)
-			return ChartData{}, err
+			return nil, err
 		}
-		directorNames = append(directorNames, directorName)
-		filmCounts = append(filmCounts, count)
+
+		pathStr := ""
+		if profilePath.Valid {
+			pathStr = profilePath.String
+		}
+
+		topActors = append(topActors, TopCreditData{
+			Name:        name,
+			FilmCount:   count,
+			ProfilePath: pathStr,
+		})
 	}
 
 	if err := rows.Err(); err != nil {
 		log.Println("Rows iteration error in FetchTopActors:", err)
-		return ChartData{}, err
+		return nil, err
 	}
 
-	chartData := ChartData{
-		Labels: directorNames,
-		Datasets: []Dataset{
-			{
-				Label: "Top Actors by Film Count",
-				Data:  filmCounts,
-			},
-		},
-	}
-	return chartData, nil
+	return topActors, nil
 }
 
 // FetchTotalMoviesWatched queries the total number of films.
